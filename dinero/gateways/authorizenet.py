@@ -2,7 +2,7 @@ import requests
 from lxml import etree
 
 from dinero.ordereddict import OrderedDict
-from dinero.exceptions import PaymentException, GatewayException
+from dinero.exceptions import *
 from dinero.gateways.base import Gateway
 
 def xml_post(url, obj):
@@ -14,7 +14,7 @@ def xml_post(url, obj):
             )
 
     content = resp.content
-    if content[0] == u'\ufeff':
+    if isinstance(content, unicode) and content[0] == u'\ufeff':
         # authorize.net puts a BOM in utf-8. Shame.
         content = content[1:]
     content = str(content)
@@ -88,6 +88,26 @@ def get_first_of(dict, possibilities, default=None):
     return default
 
 
+RESPONSE_CODE_EXCEPTION_MAP = {
+        '8': [ExpiryError],
+        '6': [CardInvalidError],
+        '5': [InvalidAmountError],
+        '27': [AVSError],
+        '65': [CVVError],
+        '45': [AVSError, CVVError],
+        '2': [CardDeclinedError],
+        '11': [DuplicateTransactionError],
+        }
+def payment_exception_factory(errors):
+    exceptions = []
+    for code, message in errors:
+        try:
+            exceptions.extend(i(message) for i in RESPONSE_CODE_EXCEPTION_MAP[code])
+        except KeyError:
+            raise Exception("I don't recognize this error: {0!r}".format(errors))
+    return exceptions
+
+
 class AuthorizeNet(Gateway):
     ns = 'AnetApi/xml/v1/schema/AnetApiSchema.xsd'
     live_url = 'https://api.authorize.net/xml/v1/request.api'
@@ -128,11 +148,19 @@ class AuthorizeNet(Gateway):
     def check_for_error(self, resp):
         if resp['messages']['resultCode'] == 'Error':
             if 'transactionResponse' in resp:
-                raise PaymentException([(i['errorCode'], i['errorText'])
-                    for i in resp['transactionResponse']['errors']['error']])
+                raise PaymentException(payment_exception_factory([(i['errorCode'], i['errorText'])
+                    for i in resp['transactionResponse']['errors']['error']]))
             else:
                 raise GatewayException([(i['code'], i['text'])
                     for i in resp['messages']['message']])
+
+        # Sometimes Authorize.net is confused and returns errors even though it
+        # says that the request was Successful!
+        try:
+            raise PaymentException(payment_exception_factory((i['errorCode'], i['errorText'])
+                for i in resp['transactionResponse']['errors']['error']))
+        except KeyError:
+            pass
 
     def transaction_details(self, resp, price):
         ret = {
