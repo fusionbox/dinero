@@ -22,12 +22,13 @@ def xml_post(url, obj):
 
 
 def handle_value(root, key, value):
-    sub = etree.SubElement(root, key)
+    if value is not None:
+        sub = etree.SubElement(root, key)
 
-    if isinstance(value, dict):
-        dict_to_xml(sub, value)
-    elif value:
-        sub.text = str(value)
+        if isinstance(value, dict):
+            dict_to_xml(sub, value)
+        elif value:
+            sub.text = str(value)
 
 
 def dict_to_xml(root, dictionary, ns=None):

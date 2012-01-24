@@ -151,6 +151,14 @@ class TestDictToXml(unittest.TestCase):
     def test_barebones(self):
         self._test(*(barebones + ('root',)))
 
+    def test_none_is_no_element(self):
+        self._test(
+                "<root></root>",
+                OrderedDict([
+                    ('whatever', None),
+                    ]),
+                'root')
+
     def test_simple(self):
         self._test(*(simple + ('root',)))
 
