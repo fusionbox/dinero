@@ -2,6 +2,11 @@ class DineroException(Exception):
     pass
 
 class GatewayException(DineroException):
+    """
+    Exceptions resulting from malformed requests to the gateway.  For example,
+    if you do not have the correct login credentials, or if your request has
+    malformed data.
+    """
     pass
 
 class PaymentException(DineroException):
