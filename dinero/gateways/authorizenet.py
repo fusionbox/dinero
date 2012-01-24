@@ -1,3 +1,4 @@
+import re
 import requests
 from lxml import etree
 
@@ -19,6 +20,10 @@ def xml_post(url, obj):
         content = content[1:]
     content = str(content)
     return etree.XML(content)
+
+
+def prepare_number(number):
+    return re.sub('\D', '', number)
 
 
 def handle_value(root, key, value):
@@ -198,7 +203,7 @@ class AuthorizeNet(Gateway):
                 ('amount', price),
                 ('payment', OrderedDict([
                     ('creditCard', OrderedDict([
-                        ('cardNumber', options['number']),
+                        ('cardNumber', prepare_number(options['number'])),
                         ('expirationDate', expiry),
                         ('cardCode', options.get('cvv')),
                         ])),
