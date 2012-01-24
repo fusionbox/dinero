@@ -59,3 +59,21 @@ def test_duplicate():
 
 def test_successful():
     transact([])
+
+def test_cant_refund_unsettled():
+    txn = transact([])
+    try:
+        dinero.get_gateway().refund(txn, txn.price)
+    except PaymentException as e:
+        assert RefundError in e
+    else:
+        assert False, "must raise an exception"
+
+def test_cant_refund_more():
+    txn = transact([])
+    try:
+        dinero.get_gateway().refund(txn, txn.price + 1)
+    except PaymentException as e:
+        assert RefundError in e
+    else:
+        assert False, "must raise an exception"

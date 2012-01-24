@@ -97,6 +97,7 @@ RESPONSE_CODE_EXCEPTION_MAP = {
         '45': [AVSError, CVVError],
         '2': [CardDeclinedError],
         '11': [DuplicateTransactionError],
+        '54': [RefundError],
         }
 def payment_exception_factory(errors):
     exceptions = []
@@ -104,7 +105,7 @@ def payment_exception_factory(errors):
         try:
             exceptions.extend(i(message) for i in RESPONSE_CODE_EXCEPTION_MAP[code])
         except KeyError:
-            raise Exception("I don't recognize this error: {0!r}".format(errors))
+            raise Exception("I don't recognize this error: {0!r}. Better call the programmers.".format(errors))
     return exceptions
 
 

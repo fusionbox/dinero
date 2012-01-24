@@ -57,3 +57,6 @@ class CardDeclinedError(PaymentError):
 
 class DuplicateTransactionError(PaymentError):
     pass
+
+class RefundError(PaymentError):
+    pass
