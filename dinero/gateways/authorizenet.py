@@ -104,6 +104,7 @@ RESPONSE_CODE_EXCEPTION_MAP = {
         '11': [DuplicateTransactionError],
         '54': [RefundError],
         '33': [InvalidTransactionError],
+        '44': [CVVError],
         }
 
 def payment_exception_factory(errors):
