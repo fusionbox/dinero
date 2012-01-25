@@ -96,6 +96,7 @@ def get_first_of(dict, possibilities, default=None):
 RESPONSE_CODE_EXCEPTION_MAP = {
         '8': [ExpiryError],
         '6': [CardInvalidError],
+        '37': [CardInvalidError],
         '5': [InvalidAmountError],
         '27': [AVSError],
         '65': [CVVError],
@@ -113,7 +114,7 @@ def payment_exception_factory(errors):
         try:
             exceptions.extend(i(message) for i in RESPONSE_CODE_EXCEPTION_MAP[code])
         except KeyError:
-            raise Exception("I don't recognize this error: {0!r}. Better call the programmers.".format(list(errors)))
+            raise Exception("I don't recognize this error: {0!r}. Better call the programmers.".format(errors))
     return exceptions
 
 
@@ -166,8 +167,8 @@ class AuthorizeNet(Gateway):
         # Sometimes Authorize.net is confused and returns errors even though it
         # says that the request was Successful!
         try:
-            raise PaymentException(payment_exception_factory((i['errorCode'], i['errorText'])
-                for i in resp['transactionResponse']['errors']['error']))
+            raise PaymentException(payment_exception_factory([(i['errorCode'], i['errorText'])
+                for i in resp['transactionResponse']['errors']['error']]))
         except KeyError:
             pass
 
@@ -234,6 +235,7 @@ class AuthorizeNet(Gateway):
                 ]),),
             ]))
 
+        import pdb; pdb.set_trace()
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
 
