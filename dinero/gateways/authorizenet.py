@@ -112,7 +112,7 @@ def payment_exception_factory(errors):
         try:
             exceptions.extend(i(message) for i in RESPONSE_CODE_EXCEPTION_MAP[code])
         except KeyError:
-            raise Exception("I don't recognize this error: {0!r}. Better call the programmers.".format(errors))
+            raise Exception("I don't recognize this error: {0!r}. Better call the programmers.".format(list(errors)))
     return exceptions
 
 

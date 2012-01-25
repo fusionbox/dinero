@@ -77,3 +77,15 @@ def test_cant_refund_more():
         assert RefundError in e
     else:
         assert False, "must raise an exception"
+
+def test_invalid_txn():
+    txn = transact([])
+    txn.transaction_id = '0'
+    try:
+        import pdb;pdb.set_trace()
+        dinero.get_gateway().refund(txn, txn.price)
+    except PaymentException as e:
+        raise
+        assert InvalidTransactionError in e
+    else:
+        assert False, "must raise an exception"
