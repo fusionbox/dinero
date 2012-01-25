@@ -235,7 +235,6 @@ class AuthorizeNet(Gateway):
                 ]),),
             ]))
 
-        import pdb; pdb.set_trace()
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
 
