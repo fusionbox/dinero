@@ -65,3 +65,6 @@ class DuplicateTransactionError(PaymentError):
 
 class RefundError(PaymentError):
     pass
+
+class InvalidTransactionError(PaymentError):
+    pass

@@ -103,7 +103,9 @@ RESPONSE_CODE_EXCEPTION_MAP = {
         '2': [CardDeclinedError],
         '11': [DuplicateTransactionError],
         '54': [RefundError],
+        '33': [InvalidTransactionError],
         }
+
 def payment_exception_factory(errors):
     exceptions = []
     for code, message in errors:
