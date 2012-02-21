@@ -1,5 +1,6 @@
 from dinero import gateways, exceptions
 
+
 def fancy_import(name):
     """
     This takes a fully qualified object name, like
@@ -15,6 +16,7 @@ def fancy_import(name):
 
 
 _configured_gateways = {}
+
 
 def configure(options):
     """
@@ -37,6 +39,7 @@ def get_gateway(gateway_name='default'):
     to the name 'default'.
     """
     return _configured_gateways[gateway_name]
+
 
 class Transaction(object):
     """
@@ -68,7 +71,7 @@ class Transaction(object):
 
         try:
             return gateway.refund(self, amount or self.price)
-        except exceptions.PaymentException as e:
+        except exceptions.PaymentException:
             if amount is None or amount == self.price:
                 return gateway.void(self)
             else:
