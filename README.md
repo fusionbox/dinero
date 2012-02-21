@@ -15,7 +15,8 @@ The API for `dinero` is simple to use.
 import dinero
 
 dinero.configure({
-    'default': { # the default gateway
+    'auth.net': { # the name for this gateway
+        'default': True, # the default gateway
         'type': 'dinero.gateways.AuthorizeNet' # the gateway path
         # ... gateway-specific configuration
     }})
