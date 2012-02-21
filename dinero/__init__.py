@@ -22,7 +22,8 @@ def configure(options):
     """
     Takes a dictionary of name -> gateway configuration pairs.
     configure({
-        'default': { # the default gateway
+        'auth.net': { # the name for this gateway
+            'default': True, # register as the default gateway
             'type': 'dinero.gateways.AuthorizeNet' # the gateway path
             # ... gateway-specific configuration
         }})
@@ -33,12 +34,27 @@ def configure(options):
         _configured_gateways[name] = fancy_import(conf['type'])(conf)
 
 
-def get_gateway(gateway_name='default'):
+def get_gateway(gateway_name=None):
     """
-    Returns a configured gateway.  If no gateway name is provided, it defaults
-    to the name 'default'.
+    Returns a configured gateway.  If no gateway name is provided, it returns
+    the config marked as 'default'.
     """
+    if gateway_name is None:
+        return get_default_gateway()
     return _configured_gateways[gateway_name]
+
+
+def get_default_gateway():
+    """
+    Returns the default gateway name.  If no gateway is found, a KeyError is thrown.
+
+    Why KeyError?  That is the same error that would be thrown if _configured_gateways
+    was accessed with a gateway name that doesn't exist.
+    """
+    for name, conf in _configured_gateways.iteritems():
+        if 'default' in conf and conf['default']:
+            return conf
+    raise KeyError("Could not find a gateway configuration that is assigned as 'default'")
 
 
 class Transaction(object):
@@ -49,13 +65,13 @@ class Transaction(object):
     """
 
     @classmethod
-    def create(cls, price, gateway_name='default', **kwargs):
+    def create(cls, price, gateway_name=None, **kwargs):
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
         return cls(gateway_name=gateway_name, **resp)
 
     @classmethod
-    def retrieve(cls, transaction_id, gateway_name='default'):
+    def retrieve(cls, transaction_id, gateway_name=None):
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve(transaction_id)
         return cls(gateway_name=gateway_name, **resp)
