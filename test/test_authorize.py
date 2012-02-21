@@ -6,9 +6,11 @@ from dinero.exceptions import *
 ## your account to reject invalid CVV and AVS responses
 import authorize_net_configuration
 
+
 ## For information on how to trigger specific errors, see http://community.developer.authorize.net/t5/Integration-and-Testing/Triggering-Specific-Transaction-Responses-Using-Test-Account/td-p/4361
 
-def transact(desired_errors, price=None, number='4'+'1'*15, month='12', year='2030', **kwargs):
+
+def transact(desired_errors, price=None, number='4' + '1' * 15, month='12', year='2030', **kwargs):
     if not price:
         price = random.randint(1, 1000)
 
@@ -34,31 +36,40 @@ def test_cvv():
     # CVV Code N, does not match
     transact([CVVError], cvv=901)
 
+
 def test_cvv_and_avs():
     transact([CVVError, AVSError], cvv=901, zip=46203)
+
 
 def test_expiry():
     transact([ExpiryError], year='2010')
 
+
 def test_invalid_card():
-    transact([CardInvalidError], number='4' + '1'*14)
+    transact([CardInvalidError], number='4' + '1' * 14)
+
 
 def test_invalid_card_and_expiry():
-    transact([CardInvalidError, ExpiryError], number='4' + '1'*14, month='12', year='2010')
+    transact([CardInvalidError, ExpiryError], number='4' + '1' * 14, month='12', year='2010')
+
 
 def test_invalid_amount():
     transact([InvalidAmountError], -1)
 
+
 def test_declined():
     transact([CardDeclinedError], zip=46282)
+
 
 def test_duplicate():
     price = random.randint(1000, 10000)
     transact([], price)
     transact([DuplicateTransactionError], price)
 
+
 def test_successful():
     transact([])
+
 
 def test_cant_refund_unsettled():
     txn = transact([])
@@ -69,6 +80,7 @@ def test_cant_refund_unsettled():
     else:
         assert False, "must raise an exception"
 
+
 def test_cant_refund_more():
     txn = transact([])
     try:
@@ -78,11 +90,13 @@ def test_cant_refund_more():
     else:
         assert False, "must raise an exception"
 
+
 def test_invalid_txn():
     txn = transact([])
     txn.transaction_id = '0'
     try:
-        import pdb;pdb.set_trace()
+        import pdb
+        pdb.set_trace()
         dinero.get_gateway().refund(txn, txn.price)
     except PaymentException as e:
         raise

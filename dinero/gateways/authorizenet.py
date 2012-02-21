@@ -6,6 +6,7 @@ from dinero.ordereddict import OrderedDict
 from dinero.exceptions import *
 from dinero.gateways.base import Gateway
 
+
 def xml_post(url, obj):
     resp = requests.post(
             url,
@@ -108,6 +109,7 @@ RESPONSE_CODE_EXCEPTION_MAP = {
         '44': [CVVError],
         }
 
+
 def payment_exception_factory(errors):
     exceptions = []
     for code, message in errors:
@@ -135,7 +137,7 @@ class AuthorizeNet(Gateway):
             self.retrieve('0')
         except GatewayException as e:
             error_code = e.args[0][0][0]
-            if error_code == 'E00007': # PermissionDenied
+            if error_code == 'E00007':  # PermissionDenied
                 self.url = self.live_url
                 try:
                     self.retrieve('0')
@@ -145,7 +147,6 @@ class AuthorizeNet(Gateway):
                         raise
             elif error_code != 'E00040' and error_code != 'E00011':
                 raise
-
 
     def build_xml(self, root_name, root):
         root.insert(0, 'merchantAuthentication', OrderedDict([
@@ -196,7 +197,6 @@ class AuthorizeNet(Gateway):
             pass
 
         return ret
-
 
     def charge(self, price, options):
         expiry = str(options['month']) + '/' + str(options['year'])
