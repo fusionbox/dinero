@@ -1,4 +1,4 @@
-from dinero import gateways, exceptions
+from dinero import exceptions
 
 
 def fancy_import(name):
@@ -32,6 +32,7 @@ def configure(options):
     """
     for name, conf in options.iteritems():
         _configured_gateways[name] = fancy_import(conf['type'])(conf)
+        _configured_gateways[name].name = name
 
 
 def get_gateway(gateway_name=None):
@@ -68,13 +69,13 @@ class Transaction(object):
     def create(cls, price, gateway_name=None, **kwargs):
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
-        return cls(gateway_name=gateway_name, **resp)
+        return cls(gateway_name=gateway.name, **resp)
 
     @classmethod
     def retrieve(cls, transaction_id, gateway_name=None):
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve(transaction_id)
-        return cls(gateway_name=gateway_name, **resp)
+        return cls(gateway_name=gateway.name, **resp)
 
     def __init__(self, gateway_name, price, transaction_id, **kwargs):
         self.gateway_name = gateway_name
