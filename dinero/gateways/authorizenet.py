@@ -293,11 +293,11 @@ class AuthorizeNet(Gateway):
                 ('profile', OrderedDict([
                     ('paymentProfiles', OrderedDict([
                         ('billTo', OrderedDict([
-                            ('firstName', options.get('firstName')),
-                            ('lastName', options.get('lastName')),
+                            ('firstName', options.get('first_name')),
+                            ('lastName', options.get('last_name')),
                             ('company', options.get('company')),
-                            ('phoneNumber', options.get('phoneNumber')),
-                            ('faxNumber', options.get('faxNumber')),
+                            ('phoneNumber', options.get('phone')),
+                            ('faxNumber', options.get('fax')),
                             ('address', options.get('address')),
                             ('state', options.get('state')),
                             ('city', options.get('city')),
