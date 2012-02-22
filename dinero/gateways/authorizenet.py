@@ -129,24 +129,30 @@ class AuthorizeNet(Gateway):
         self.login_id = options['login_id']
         self.transaction_key = options['transaction_key']
 
-        self.url = self.test_url
-
-        # Auto-discover if this is a real account or a developer account.  Tries
-        # to access both end points and see which one works.
-        try:
-            self.retrieve('0')
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00007':  # PermissionDenied
+        if 'live' in options:
+            if options['live']:
                 self.url = self.live_url
-                try:
-                    self.retrieve('0')
-                except GatewayException as e:
-                    error_code = e.args[0][0][0]
-                    if error_code != 'E00040' and error_code != 'E00011':
-                        raise
-            elif error_code != 'E00040' and error_code != 'E00011':
-                raise
+            else:
+                self.url = self.test_url
+        else:
+            self.url = self.test_url
+
+            # Auto-discover if this is a real account or a developer account.  Tries
+            # to access both end points and see which one works.
+            try:
+                self.retrieve('0')
+            except GatewayException as e:
+                error_code = e.args[0][0][0]
+                if error_code == 'E00007':  # PermissionDenied
+                    self.url = self.live_url
+                    try:
+                        self.retrieve('0')
+                    except GatewayException as e:
+                        error_code = e.args[0][0][0]
+                        if error_code != 'E00040' and error_code != 'E00011':
+                            raise
+                elif error_code != 'E00040' and error_code != 'E00011':
+                    raise
 
     def build_xml(self, root_name, root):
         root.insert(0, 'merchantAuthentication', OrderedDict([
@@ -286,13 +292,21 @@ class AuthorizeNet(Gateway):
 
         return True
 
-    def create_customer(self, options):
-        xml = self.build_xml('createCustomerProfileRequest', OrderedDict([
-            ('profile', OrderedDict([
-                ('email', options['email']),  # email is required
-                ('profile', OrderedDict([
-                    ('paymentProfiles', OrderedDict([
-                        ('billTo', OrderedDict([
+    def _create_customer_xml(self, options):
+        bill_to_fields = [
+            'first_name',
+            'last_name',
+            'company',
+            'phone',
+            'fax',
+            'address',
+            'state',
+            'city',
+            'zip',
+            'country',
+            ]
+        if any(field in options for field in bill_to_fields):
+            bill_to = ('billTo', OrderedDict([
                             ('firstName', options.get('first_name')),
                             ('lastName', options.get('last_name')),
                             ('company', options.get('company')),
@@ -303,17 +317,45 @@ class AuthorizeNet(Gateway):
                             ('city', options.get('city')),
                             ('zip', options.get('zip')),
                             ('country', options.get('country')),
-                            ])),
-                        ('payment', OrderedDict([
+                        ]))
+        else:
+            bill_to = None
+
+        payment_fields = [
+            'number',
+            'year',
+            'month',
+            ]
+        if any(field in options for field in payment_fields):
+            payment = ('payment', OrderedDict([
                             ('creditCard', OrderedDict([
                                 ('cardNumber', options.get('number')),
-                                ('expirationDate', options.get('year') + '/' + options.get('month')),
+                                ('expirationDate', options.get('year', '0000') + '/' + options.get('month', '00')),
                                 ])),
-                            ])),
-                        ])),
-                    ])),
-                ])),
-            ]))
+                            ]))
+        else:
+            payment = None
+
+        if bill_to or payment:
+            stuff = []
+            if bill_to:
+                stuff.append(bill_to)
+            if payment:
+                stuff.append(payment)
+            payment_profiles = ('paymentProfiles', OrderedDict(stuff))
+        else:
+            payment_profiles = None
+
+        stuff = [('email', options['email'])]
+        if payment_profiles:
+            stuff.append(payment_profiles)
+        root = OrderedDict([
+            ('profile', OrderedDict(stuff)),
+            ])
+        return self.build_xml('createCustomerProfileRequest', root)
+
+    def create_customer(self, options):
+        xml = self._create_customer_xml(options)
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
 
@@ -349,8 +391,8 @@ class AuthorizeNet(Gateway):
             'first_name': 'paymentProfiles.billTo.firstName',
             'last_name': 'paymentProfiles.billTo.lastName',
             'company': 'paymentProfiles.billTo.company',
-            'phone': 'paymentProfiles.billTo.phone',
-            'fax': 'paymentProfiles.billTo.fax',
+            'phone': 'paymentProfiles.billTo.phoneNumber',
+            'fax': 'paymentProfiles.billTo.faxNumber',
             'address': 'paymentProfiles.billTo.address',
             'state': 'paymentProfiles.billTo.state',
             'city': 'paymentProfiles.billTo.city',

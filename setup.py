@@ -8,7 +8,7 @@ def read(fname):
 
 setup(
         name="dinero",
-        version="0.0.1",
+        version="0.0.2",
         packages=["dinero", "dinero.gateways"],
         author="Fusionbox Programmers",
         author_email="programmers@fusionbox.com",

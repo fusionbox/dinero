@@ -1,5 +1,4 @@
-from dinero import exceptions
-from dinero.configure import get_gateway
+from dinero import exceptions, get_gateway
 
 
 class Transaction(object):
