@@ -66,9 +66,24 @@ transaction = dinero.Transaction.retrieve(
 
 `dinero.Transaction.retrieve` also returns a Transaction object.
 
-Finally, in order to refund or cancel a payment, there is a `refund` method on
+In order to refund or cancel a payment, there is a `refund` method on
 Transaction objects.
 
 ```python
 transaction.refund()
+```
+
+### Customer Objects
+
+You can also create transactions using a Customer object.  A Customer
+object, much like the gateway configuration, can have multiple named
+accounts, one of which should be declared the "default".
+
+```python
+customer = dinero.Customer.create(
+    first_name='Joey',
+    last_name='Shabadoo',
+
+    )
+
 ```
