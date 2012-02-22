@@ -285,3 +285,98 @@ class AuthorizeNet(Gateway):
         self.check_for_error(resp)
 
         return True
+
+    def create_customer(self, options):
+        xml = self.build_xml('createCustomerProfileRequest', OrderedDict([
+            ('profile', OrderedDict([
+                ('email', options['email']),  # email is required
+                ('profile', OrderedDict([
+                    ('paymentProfiles', OrderedDict([
+                        ('billTo', OrderedDict([
+                            ('firstName', options.get('firstName')),
+                            ('lastName', options.get('lastName')),
+                            ('company', options.get('company')),
+                            ('phoneNumber', options.get('phoneNumber')),
+                            ('faxNumber', options.get('faxNumber')),
+                            ('address', options.get('address')),
+                            ('state', options.get('state')),
+                            ('city', options.get('city')),
+                            ('zip', options.get('zip')),
+                            ('country', options.get('country')),
+                            ])),
+                        ('payment', OrderedDict([
+                            ('creditCard', OrderedDict([
+                                ('cardNumber', options.get('number')),
+                                ('expirationDate', options.get('year') + '/' + options.get('month')),
+                                ])),
+                            ])),
+                        ])),
+                    ])),
+                ])),
+            ]))
+        resp = xml_to_dict(xml_post(self.url, xml))
+        self.check_for_error(resp)
+
+        return self.customer_details(resp['profile'])
+
+    def retrieve_customer(self, customer_id):
+        xml = self.build_xml('getCustomerProfileRequest', OrderedDict([
+            ('customerProfileId', customer_id),
+            ]))
+        resp = xml_to_dict(xml_post(self.url, xml))
+        self.check_for_error(resp)
+
+        return self.customer_details(resp['profile'])
+
+    def customer_details(self, resp):
+        ret = {
+                'customer_id': resp['customerProfileId'],
+                'email': resp['email'],
+            }
+
+        # more than one paymentProfile?
+        if isinstance(resp.get('paymentProfiles'), list):
+            resp['paymentProfiles'] = resp['paymentProfiles'][0]
+
+        # more than one paymentProfile?
+        try:
+            if isinstance(resp['paymentProfiles']['profile']['creditCard'], list):
+                resp['paymentProfiles']['profile']['creditCard'] = resp['paymentProfiles']['profile']['creditCard'][0]
+        except KeyError:
+            pass
+
+        gets = {
+            'first_name': 'paymentProfiles.billTo.firstName',
+            'last_name': 'paymentProfiles.billTo.lastName',
+            'company': 'paymentProfiles.billTo.company',
+            'phone': 'paymentProfiles.billTo.phone',
+            'fax': 'paymentProfiles.billTo.fax',
+            'address': 'paymentProfiles.billTo.address',
+            'state': 'paymentProfiles.billTo.state',
+            'city': 'paymentProfiles.billTo.city',
+            'zip': 'paymentProfiles.billTo.zip',
+            'country': 'paymentProfiles.billTo.country',
+            'last_4': 'paymentProfiles.profile.creditCard.cardNumber',
+            }
+        for key, kvp in gets.iteritems():
+            try:
+                search = kvp.split('.')
+                val = None
+                while search:
+                    val = resp[search.pop(0)]
+            except KeyError:
+                val = None
+            ret[key] = val
+
+        if 'last_4' in ret:
+            # in the form "XXXX1234"
+            ret['last_4'] = ret['last_4'][4:]
+            # now it's in the form "1234"
+
+        try:
+            ret['messages'] = [(message['code'], message['description'])
+                    for message in resp['messages']['message']]
+        except KeyError:
+            pass
+
+        return ret
