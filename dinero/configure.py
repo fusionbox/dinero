@@ -32,6 +32,7 @@ def configure(options):
     for name, conf in options.iteritems():
         _configured_gateways[name] = fancy_import(conf['type'])(conf)
         _configured_gateways[name].name = name
+        _configured_gateways[name].default = conf.get('default', False)
 
 
 def get_gateway(gateway_name=None):
@@ -51,7 +52,7 @@ def get_default_gateway():
     Why KeyError?  That is the same error that would be thrown if _configured_gateways
     was accessed with a gateway name that doesn't exist.
     """
-    for name, conf in _configured_gateways.iteritems():
-        if 'default' in conf and conf['default']:
-            return conf
+    for name, gateway in _configured_gateways.iteritems():
+        if gateway.default:
+            return gateway
     raise KeyError("Could not find a gateway configuration that is assigned as 'default'")
