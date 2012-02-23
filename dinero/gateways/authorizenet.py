@@ -581,9 +581,11 @@ class AuthorizeNet(Gateway):
             'country': 'paymentProfile.billTo.country',
             'last_4': 'paymentProfile.payment.creditCard.cardNumber',
 
-            # auth.net specific
+            # these must be sent to auth.net in updateCustomerPaymentProfileRequest
             'number': 'paymentProfile.payment.creditCard.cardNumber',
             'expiration_date': 'paymentProfile.payment.creditCard.expirationDate',
+
+            # auth.net specific
             'customer_payment_profile_id': 'paymentProfile.customerPaymentProfileId',
             }
         for key, kvp in gets.iteritems():
