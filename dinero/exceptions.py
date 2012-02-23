@@ -68,3 +68,15 @@ class RefundError(PaymentError):
 
 class InvalidTransactionError(PaymentError):
     pass
+
+##|
+##|  CUSTOMER
+##|
+class InvalidCustomerException(DineroException):
+    pass
+
+class DuplicateCustomerError(PaymentError):
+    pass
+
+class CustomerNotFoundError(PaymentError):
+    pass

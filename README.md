@@ -81,9 +81,32 @@ accounts, one of which should be declared the "default".
 
 ```python
 customer = dinero.Customer.create(
+    # email is used as a unique identifier for this customer
+    email='joeyjoejoejunior@example.com',
+    # these are all optional
     first_name='Joey',
     last_name='Shabadoo',
+    company='Shabadoo, Inc.',
+    phone='000-000-0000',
+    fax='000-000-0001',
+    address='123 somewhere st',
+    state='SW',
+    city='somewhere',
+    zip='12345',
+    country='US',  # this is the 2-letter country code
 
+    # credit card information
+    number='4111''1111''1111''1111',
+    year='2012',
+    month='02',
     )
 
+```
+
+## TESTING
+
+```shell
+$ pip install pytest
+    ...
+$ py.test
 ```

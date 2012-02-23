@@ -1,4 +1,5 @@
-from dinero import exceptions, get_gateway
+from dinero import get_gateway
+from dinero.exceptions import InvalidCustomerException
 
 
 class Customer(object):
@@ -25,8 +26,32 @@ class Customer(object):
         self.customer_id = customer_id
         self.data = kwargs
 
+    def save(self):
+        if not self.customer_id:
+            raise InvalidCustomerException("Cannot save a customer that doesn't have a customer_id")
+        gateway = get_gateway(self.gateway_name)
+        gateway.update_customer(self.customer_id, self.data)
+        return True
+
+    def delete(self):
+        if not self.customer_id:
+            raise InvalidCustomerException("Cannot delete a customer that doesn't have a customer_id")
+        gateway = get_gateway(self.gateway_name)
+        gateway.delete_customer(self.customer_id)
+        self.customer_id = None
+        return True
+
     def to_dict(self):
         return vars(self)
+
+    def __getattr__(self, attr):
+        return self.data[attr]
+
+    def __setattr__(self, attr, val):
+        if attr in ['gateway_name', 'customer_id', 'resp', 'data']:
+            self.__dict__[attr] = val
+        else:
+            self.data[attr] = val
 
     @classmethod
     def from_dict(cls, dict):
