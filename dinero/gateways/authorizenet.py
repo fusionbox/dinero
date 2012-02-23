@@ -129,30 +129,24 @@ class AuthorizeNet(Gateway):
         self.login_id = options['login_id']
         self.transaction_key = options['transaction_key']
 
-        if 'live' in options:
-            if options['live']:
-                self.url = self.live_url
-            else:
-                self.url = self.test_url
-        else:
-            self.url = self.test_url
+        self.url = self.test_url
 
-            # Auto-discover if this is a real account or a developer account.  Tries
-            # to access both end points and see which one works.
-            try:
-                self.retrieve('0')
-            except GatewayException as e:
-                error_code = e.args[0][0][0]
-                if error_code == 'E00007':  # PermissionDenied
-                    self.url = self.live_url
-                    try:
-                        self.retrieve('0')
-                    except GatewayException as e:
-                        error_code = e.args[0][0][0]
-                        if error_code != 'E00040' and error_code != 'E00011':
-                            raise
-                elif error_code != 'E00040' and error_code != 'E00011':
-                    raise
+        # Auto-discover if this is a real account or a developer account.  Tries
+        # to access both end points and see which one works.
+        try:
+            self.retrieve('0')
+        except GatewayException as e:
+            error_code = e.args[0][0][0]
+            if error_code == 'E00007':  # PermissionDenied
+                self.url = self.live_url
+                try:
+                    self.retrieve('0')
+                except GatewayException as e:
+                    error_code = e.args[0][0][0]
+                    if error_code != 'E00040' and error_code != 'E00011':
+                        raise
+            elif error_code != 'E00040' and error_code != 'E00011':
+                raise
 
     def build_xml(self, root_name, root):
         root.insert(0, 'merchantAuthentication', OrderedDict([
