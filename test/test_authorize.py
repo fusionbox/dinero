@@ -12,7 +12,7 @@ import authorize_net_configuration
 
 def transact(desired_errors, price=None, number='4' + '1' * 15, month='12', year='2030', **kwargs):
     if not price:
-        price = random.randint(1, 1000)
+        price = float(random.randint(1, 100000)) / 100
 
     try:
         return dinero.Transaction.create(price, number=number, month=month, year=year, **kwargs)
@@ -95,11 +95,8 @@ def test_invalid_txn():
     txn = transact([])
     txn.transaction_id = '0'
     try:
-        import pdb
-        pdb.set_trace()
         dinero.get_gateway().refund(txn, txn.price)
     except PaymentException as e:
-        raise
         assert InvalidTransactionError in e
     else:
         assert False, "must raise an exception"
