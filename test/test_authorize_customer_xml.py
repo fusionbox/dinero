@@ -1,4 +1,3 @@
-import random
 import dinero
 from dinero.exceptions import *
 from lxml import etree
@@ -204,8 +203,8 @@ def test_update_customer_xml():
                         <transactionKey>{transaction_key}</transactionKey>
                     </merchantAuthentication>
                     <profile>
-                        <customerProfileId>123456789</customerProfileId>
                         <email>someone@fusionbox.com</email>
+                        <customerProfileId>123456789</customerProfileId>
                     </profile>
                 </updateCustomerProfileRequest>""".format(
                         login_id=gateway.login_id,

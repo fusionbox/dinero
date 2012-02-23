@@ -376,7 +376,7 @@ class AuthorizeNet(Gateway):
         return profile
 
     def _update_customer_xml(self, customer_id, options):
-        stuff = [('customerProfileId', customer_id), ('email', options['email'])]
+        stuff = [('email', options['email']), ('customerProfileId', customer_id)]
 
         root = OrderedDict([
             ('profile', OrderedDict(stuff)),
