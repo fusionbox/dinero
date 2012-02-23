@@ -9,10 +9,6 @@ import authorize_net_configuration
 ## For information on how to trigger specific errors, see http://community.developer.authorize.net/t5/Integration-and-Testing/Triggering-Specific-Transaction-Responses-Using-Test-Account/td-p/4361
 
 
-def trimmy(s):
-    return ''.join(line.lstrip() for line in s.splitlines())
-
-
 def test_create_delete_customer():
     options = {
         'email': 'someone@fusionbox.com',
@@ -36,10 +32,13 @@ def test_create_delete_customer():
     customer = dinero.Customer.create(**options)
     try:
         assert customer.customer_payment_profile_id, 'customer.customer_payment_profile_id is not set'
-    except AttributeError, KeyError:
+    except AttributeError:
         assert False, 'customer.customer_payment_profile_id is not set'
     for key, val in options.iteritems():
-        assert val == getattr(customer, key), 'customer.%s != options[%s]' % (key, key)
+        try:
+            assert val == getattr(customer, key), 'customer.%s != options[%s]' % (key, key)
+        except AttributeError:
+            assert False, 'customer.%s is not set' % key
     customer.delete()
 
 
