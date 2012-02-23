@@ -24,7 +24,7 @@ def xml_post(url, obj):
 
 
 def prepare_number(number):
-    return re.sub('\D', '', number)
+    return re.sub('[^0-9Xx]', '', number)
 
 
 def handle_value(root, key, value):
@@ -177,7 +177,9 @@ class AuthorizeNet(Gateway):
     ##|  XML BUILDERS
     ##|
     def _payment_xml(self, options):
-        expiry = str(options['month']) + '/' + str(options['year'])
+        expiry = str(options['year']) + '-' + str(options['month'])
+        if expiry == 'XXXX-XX':
+            expiry = 'XXXX'
 
         return OrderedDict([
             ('creditCard', OrderedDict([
@@ -296,7 +298,7 @@ class AuthorizeNet(Gateway):
         # the necessary data was included
 
         # build <billTo> entry?
-        bill_to_fields = [
+        billto_fields = [
             'first_name',
             'last_name',
             'company',
@@ -308,10 +310,10 @@ class AuthorizeNet(Gateway):
             'phone',
             'fax',
             ]
-        if any(field in options for field in bill_to_fields):
-            bill_to = ('billTo', self._billto_xml(options))
+        if any(field in options for field in billto_fields):
+            billto = ('billTo', self._billto_xml(options))
         else:
-            bill_to = None
+            billto = None
 
         # build <payment> entry?
         if 'number' in options:
@@ -319,10 +321,10 @@ class AuthorizeNet(Gateway):
         else:
             payment = None
 
-        if bill_to or payment:
+        if billto or payment:
             stuff = []
-            if bill_to:
-                stuff.append(bill_to)
+            if billto:
+                stuff.append(billto)
             if payment:
                 stuff.append(payment)
             payment_profiles = ('paymentProfiles', OrderedDict(stuff))
@@ -351,6 +353,13 @@ class AuthorizeNet(Gateway):
         profile = {}
         profile.update(options)
         profile['customer_id'] = resp['customerProfileId']
+        profile['customer_payment_profile_id'] = None
+        try:
+            if resp['customerPaymentProfileIdList'] and resp['customerPaymentProfileIdList']['numericString']:
+                profile['customer_payment_profile_id'] = resp['customerPaymentProfileIdList']['numericString']
+        except KeyError:
+            pass
+
         return profile
 
     def _update_customer_xml(self, customer_id, options):
@@ -361,12 +370,12 @@ class AuthorizeNet(Gateway):
             ])
         return self.build_xml('updateCustomerProfileRequest', root)
 
-    def _update_customer_payment_xml(self, customer_id, options):
+    def _update_customer_payment(self, customer_id, options):
         # update <billTo> and <payment> fields only if
         # the necessary data was included
 
         # update <billTo> entry?
-        bill_to_fields = [
+        billto_fields = [
             'first_name',
             'last_name',
             'company',
@@ -378,10 +387,10 @@ class AuthorizeNet(Gateway):
             'phone',
             'fax',
             ]
-        if any(field in options for field in bill_to_fields):
-            bill_to = ('billTo', self._billto_xml(options))
+        if any(field in options for field in billto_fields):
+            billto = ('billTo', self._billto_xml(options))
         else:
-            bill_to = None
+            billto = None
 
         # update <payment> entry?
         if 'number' in options:
@@ -389,19 +398,32 @@ class AuthorizeNet(Gateway):
         else:
             payment = None
 
-        if bill_to or payment:
+        if billto or payment:
             if 'customer_payment_profile_id' in options:
                 customer_payment_profile_id = options['customer_payment_profile_id']
             else:
                 customer = self.retrieve_customer(customer_id)
                 customer_payment_profile_id = customer.customer_payment_profile_id
 
-            stuff = []
-            if bill_to:
-                stuff.append(bill_to)
+            merge = None
+            if customer_payment_profile_id:
+                try:
+                    profile = self._get_customer_payment_profile(customer_id, customer_payment_profile_id)
+                    merge = self.dict_to_payment_profile(profile)
+                    merge.update(options)
+                    options = merge
+                except CustomerNotFoundError:
+                    pass
 
-            if payment:
-                stuff.append(payment)
+            stuff = []
+            # refresh billto and payment if merge came back with anything
+            if merge:
+                billto = ('billTo', self._billto_xml(options))
+            stuff.append(billto)
+
+            if merge:
+                payment = ('payment', self._payment_xml(options))
+            stuff.append(payment)
 
             stuff.append(('customerPaymentProfileId', customer_payment_profile_id))
 
@@ -409,9 +431,15 @@ class AuthorizeNet(Gateway):
                 ('customerProfileId', customer_id),
                 ('paymentProfile', OrderedDict(stuff)),
                 ])
-            return self.build_xml('updateCustomerPaymentProfileRequest', root)
-        else:
-            return None
+            xml = self.build_xml('updateCustomerPaymentProfileRequest', root)
+            resp = xml_to_dict(xml_post(self.url, xml))
+            try:
+                self.check_for_error(resp)
+            except GatewayException as e:
+                error_code = e.args[0][0][0]
+                if error_code == 'E00039':  # Duplicate Record
+                    raise DuplicateCustomerError(e)
+                raise
 
     def update_customer(self, customer_id, options):
         xml = self._update_customer_xml(customer_id, options)
@@ -424,16 +452,7 @@ class AuthorizeNet(Gateway):
             #     raise DuplicateCustomerError(e)
             raise
 
-        xml = self._update_customer_payment_xml(customer_id, options)
-        if xml:
-            resp = xml_to_dict(xml_post(self.url, xml))
-            try:
-                self.check_for_error(resp)
-            except GatewayException as e:
-                # error_code = e.args[0][0][0]
-                # if error_code == 'E00039':  # Duplicate Record
-                #     raise DuplicateCustomerError(e)
-                raise
+        self._update_customer_payment(customer_id, options)
 
         return True
 
@@ -468,6 +487,22 @@ class AuthorizeNet(Gateway):
 
         return True
 
+    def _get_customer_payment_profile(self, customer_id, customer_payment_profile_id):
+        xml = self.build_xml('getCustomerPaymentProfileRequest', OrderedDict([
+            ('customerProfileId', customer_id),
+            ('customerPaymentProfileId', customer_payment_profile_id),
+            ]))
+        resp = xml_to_dict(xml_post(self.url, xml))
+        try:
+            self.check_for_error(resp)
+        except GatewayException as e:
+            error_code = e.args[0][0][0]
+            if error_code == 'E00040':  # NotFound
+                raise CustomerNotFoundError(e)
+            raise
+
+        return resp
+
     def dict_to_customer(self, resp):
         ret = {
                 'customer_id': resp['customerProfileId'],
@@ -478,7 +513,7 @@ class AuthorizeNet(Gateway):
         if isinstance(resp.get('paymentProfiles'), list):
             resp['paymentProfiles'] = resp['paymentProfiles'][0]
 
-        # more than one paymentProfile?
+        # more than one creditCard?
         try:
             if isinstance(resp['paymentProfiles']['profile']['creditCard'], list):
                 resp['paymentProfiles']['profile']['creditCard'] = resp['paymentProfiles']['profile']['creditCard'][0]
@@ -515,6 +550,63 @@ class AuthorizeNet(Gateway):
             # in the form "XXXX1234"
             ret['last_4'] = ret['last_4'][4:]
             # now it's in the form "1234"
+
+        try:
+            ret['messages'] = [(message['code'], message['description'])
+                               for message in resp['messages']['message']]
+        except KeyError:
+            pass
+
+        return ret
+
+    def dict_to_payment_profile(self, resp):
+        ret = {}
+
+        try:
+            if isinstance(resp['paymentProfile']['profile']['creditCard'], list):
+                resp['paymentProfile']['profile']['creditCard'] = resp['paymentProfile']['profile']['creditCard'][0]
+        except KeyError:
+            pass
+
+        gets = {
+            'first_name': 'paymentProfile.billTo.firstName',
+            'last_name': 'paymentProfile.billTo.lastName',
+            'company': 'paymentProfile.billTo.company',
+            'phone': 'paymentProfile.billTo.phoneNumber',
+            'fax': 'paymentProfile.billTo.faxNumber',
+            'address': 'paymentProfile.billTo.address',
+            'state': 'paymentProfile.billTo.state',
+            'city': 'paymentProfile.billTo.city',
+            'zip': 'paymentProfile.billTo.zip',
+            'country': 'paymentProfile.billTo.country',
+            'last_4': 'paymentProfile.payment.creditCard.cardNumber',
+
+            # auth.net specific
+            'number': 'paymentProfile.payment.creditCard.cardNumber',
+            'expiration_date': 'paymentProfile.payment.creditCard.expirationDate',
+            'customer_payment_profile_id': 'paymentProfile.customerPaymentProfileId',
+            }
+        for key, kvp in gets.iteritems():
+            try:
+                search = kvp.split('.')
+                val = resp
+                while search:
+                    val = val[search.pop(0)]
+                ret[key] = val
+            except KeyError:
+                pass
+
+        if 'last_4' in ret:
+            # in the form "XXXX1234"
+            ret['last_4'] = ret['last_4'][4:]
+            # now it's in the form "1234"
+
+        if 'expiration_date' in ret:
+            # in the form "XXXX" or "YYYY-MM"
+            if '-' in ret['expiration_date']:
+                ret['year'], ret['month'] = ret['expiration_date'].split('-', 1)
+            else:
+                ret['year'], ret['month'] = ('XXXX', 'XX')
 
         try:
             ret['messages'] = [(message['code'], message['description'])

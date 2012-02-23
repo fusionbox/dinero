@@ -36,7 +36,10 @@ def test_create_delete_customer():
     }
 
     customer = dinero.Customer.create(**options)
-    assert customer.customer_payment_profile_id, 'customer.customer_payment_profile_id is not set'
+    try:
+        assert customer.customer_payment_profile_id, 'customer.customer_payment_profile_id is not set'
+    except AttributeError, KeyError:
+        assert False, 'customer.customer_payment_profile_id is not set'
     for key, val in options.iteritems():
         assert val == getattr(customer, key), 'customer.%s != options[%s]' % (key, key)
     customer.delete()
@@ -110,5 +113,3 @@ def test_retrieve_nonexistant_customer():
         pass
     else:
         assert False, "CustomerNotFoundError expected"
-
-# import dinero ; import test.authorize_net_configuration ; customer = dinero.Customer.retrieve(6632317)
