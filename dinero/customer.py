@@ -45,7 +45,10 @@ class Customer(object):
         return vars(self)
 
     def __getattr__(self, attr):
-        return self.data[attr]
+        try:
+            return self.data[attr]
+        except KeyError as e:
+            raise AttributeError(e)
 
     def __setattr__(self, attr, val):
         if attr in ['gateway_name', 'customer_id', 'resp', 'data']:
