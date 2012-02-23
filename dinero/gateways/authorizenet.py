@@ -396,11 +396,14 @@ class AuthorizeNet(Gateway):
                 customer = self.retrieve_customer(customer_id)
                 customer_payment_profile_id = customer.customer_payment_profile_id
 
-            stuff = [('customerPaymentProfileId', customer_payment_profile_id)]
+            stuff = []
             if bill_to:
                 stuff.append(bill_to)
+
             if payment:
                 stuff.append(payment)
+
+            stuff.append(('customerPaymentProfileId', customer_payment_profile_id))
 
             root = OrderedDict([
                 ('customerProfileId', customer_id),
