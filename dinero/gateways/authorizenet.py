@@ -1,3 +1,4 @@
+from __future__ import division
 import re
 import requests
 from lxml import etree
@@ -5,6 +6,8 @@ from lxml import etree
 from dinero.ordereddict import OrderedDict
 from dinero.exceptions import *
 from dinero.gateways.base import Gateway
+
+from datetime import date
 
 
 def xml_post(url, obj):
@@ -177,7 +180,16 @@ class AuthorizeNet(Gateway):
     ##|  XML BUILDERS
     ##|
     def _payment_xml(self, options):
-        expiry = str(options['year']) + '-' + str(options['month'])
+        year = str(options['year'])
+        if year == 'XXXX':
+            pass
+        # 2-digit years
+        elif int(year) < 100:
+            century = date.today().century // 100
+            year = str(century) + str(year)
+
+        # zeropad the month
+        expiry = str(year) + '-' + str(options['month']).zfill(2)
         if expiry == 'XXXX-XX':
             expiry = 'XXXX'
 
@@ -425,14 +437,23 @@ class AuthorizeNet(Gateway):
                 payment = ('payment', self._payment_xml(options))
             stuff.append(payment)
 
-            stuff.append(('customerPaymentProfileId', customer_payment_profile_id))
+            if customer_payment_profile_id:
+                stuff.append(('customerPaymentProfileId', customer_payment_profile_id))
 
-            root = OrderedDict([
-                ('customerProfileId', customer_id),
-                ('paymentProfile', OrderedDict(stuff)),
-                ])
-            xml = self.build_xml('updateCustomerPaymentProfileRequest', root)
-            resp = xml_to_dict(xml_post(self.url, xml))
+                root = OrderedDict([
+                    ('customerProfileId', customer_id),
+                    ('paymentProfile', OrderedDict(stuff)),
+                    ])
+                xml = self.build_xml('updateCustomerPaymentProfileRequest', root)
+                resp = xml_to_dict(xml_post(self.url, xml))
+            else:
+                root = OrderedDict([
+                    ('customerProfileId', customer_id),
+                    ('paymentProfile', OrderedDict(stuff)),
+                    ])
+                xml = self.build_xml('createCustomerPaymentProfileRequest', root)
+                resp = xml_to_dict(xml_post(self.url, xml))
+
             try:
                 self.check_for_error(resp)
             except GatewayException as e:
@@ -442,17 +463,17 @@ class AuthorizeNet(Gateway):
                 raise
 
     def update_customer(self, customer_id, options):
-        xml = self._update_customer_xml(customer_id, options)
-        resp = xml_to_dict(xml_post(self.url, xml))
         try:
+            xml = self._update_customer_xml(customer_id, options)
+            resp = xml_to_dict(xml_post(self.url, xml))
             self.check_for_error(resp)
         except GatewayException as e:
-            # error_code = e.args[0][0][0]
-            # if error_code == 'E00039':  # Duplicate Record
-            #     raise DuplicateCustomerError(e)
+            error_code = e.args[0][0][0]
+            if error_code == 'E00040':  # NotFound
+                raise DuplicateCustomerError(e)
             raise
-
-        self._update_customer_payment(customer_id, options)
+        else:
+            self._update_customer_payment(customer_id, options)
 
         return True
 

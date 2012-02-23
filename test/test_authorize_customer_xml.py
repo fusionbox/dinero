@@ -211,38 +211,3 @@ def test_update_customer_xml():
                         transaction_key=gateway.transaction_key,
                     ))
     assert etree.tostring(xml) == should_be, "Invalid XML (\n\t%s\n\t%s\n)" % (etree.tostring(xml), should_be)
-
-    xml = gateway._update_customer_payment_xml('123456789', options)
-    should_be = trimmy(
-             """<updateCustomerPaymentProfileRequest xmlns="AnetApi/xml/v1/schema/AnetApiSchema.xsd">
-                    <merchantAuthentication>
-                        <name>{login_id}</name>
-                        <transactionKey>{transaction_key}</transactionKey>
-                    </merchantAuthentication>
-                    <customerProfileId>123456789</customerProfileId>
-                    <paymentProfile>
-                        <customerPaymentProfileId>987654321</customerPaymentProfileId>
-                        <billTo>
-                            <firstName>Joey</firstName>
-                            <lastName>Shabadoo</lastName>
-                            <company>Shabadoo, Inc.</company>
-                            <address>123 somewhere st</address>
-                            <city>somewhere</city>
-                            <state>SW</state>
-                            <zip>12345</zip>
-                            <country>US</country>
-                            <phoneNumber>000-000-0000</phoneNumber>
-                            <faxNumber>000-000-0001</faxNumber>
-                        </billTo>
-                        <payment>
-                            <creditCard>
-                                <cardNumber>4111111111111111</cardNumber>
-                                <expirationDate>2012-12</expirationDate>
-                            </creditCard>
-                        </payment>
-                    </paymentProfile>
-                </updateCustomerPaymentProfileRequest>""".format(
-                        login_id=gateway.login_id,
-                        transaction_key=gateway.transaction_key,
-                    ))
-    assert etree.tostring(xml) == should_be, "Invalid XML (\n\t%s\n\t%s\n)" % (etree.tostring(xml), should_be)

@@ -1,7 +1,5 @@
-import random
 import dinero
 from dinero.exceptions import *
-from lxml import etree
 
 ## These tests require that you provide settings for authorize.net and set up
 ## your account to reject invalid CVV and AVS responses
