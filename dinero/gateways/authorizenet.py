@@ -215,6 +215,60 @@ class AuthorizeNet(Gateway):
             ('faxNumber', options.get('fax')),
             ])
 
+    def _create_customer_xml(self, options):
+        # include <billTo> and <payment> fields only if
+        # the necessary data was included
+
+        # build <billTo> entry?
+        billto_fields = [
+            'first_name',
+            'last_name',
+            'company',
+            'address',
+            'city',
+            'state',
+            'zip',
+            'country',
+            'phone',
+            'fax',
+            ]
+        if any(field in options for field in billto_fields):
+            billto = ('billTo', self._billto_xml(options))
+        else:
+            billto = None
+
+        # build <payment> entry?
+        if 'number' in options:
+            payment = ('payment', self._payment_xml(options))
+        else:
+            payment = None
+
+        if billto or payment:
+            stuff = []
+            if billto:
+                stuff.append(billto)
+            if payment:
+                stuff.append(payment)
+            payment_profiles = ('paymentProfiles', OrderedDict(stuff))
+        else:
+            payment_profiles = None
+
+        stuff = [('email', options['email'])]
+        if payment_profiles:
+            stuff.append(payment_profiles)
+        root = OrderedDict([
+            ('profile', OrderedDict(stuff)),
+            ])
+        return self.build_xml('createCustomerProfileRequest', root)
+
+    def _update_customer_xml(self, customer_id, options):
+        stuff = [('email', options['email']), ('customerProfileId', customer_id)]
+
+        root = OrderedDict([
+            ('profile', OrderedDict(stuff)),
+            ])
+        return self.build_xml('updateCustomerProfileRequest', root)
+
     def transaction_details(self, resp, price):
         ret = {
                 'price': price,
@@ -305,52 +359,6 @@ class AuthorizeNet(Gateway):
 
         return True
 
-    def _create_customer_xml(self, options):
-        # include <billTo> and <payment> fields only if
-        # the necessary data was included
-
-        # build <billTo> entry?
-        billto_fields = [
-            'first_name',
-            'last_name',
-            'company',
-            'address',
-            'city',
-            'state',
-            'zip',
-            'country',
-            'phone',
-            'fax',
-            ]
-        if any(field in options for field in billto_fields):
-            billto = ('billTo', self._billto_xml(options))
-        else:
-            billto = None
-
-        # build <payment> entry?
-        if 'number' in options:
-            payment = ('payment', self._payment_xml(options))
-        else:
-            payment = None
-
-        if billto or payment:
-            stuff = []
-            if billto:
-                stuff.append(billto)
-            if payment:
-                stuff.append(payment)
-            payment_profiles = ('paymentProfiles', OrderedDict(stuff))
-        else:
-            payment_profiles = None
-
-        stuff = [('email', options['email'])]
-        if payment_profiles:
-            stuff.append(payment_profiles)
-        root = OrderedDict([
-            ('profile', OrderedDict(stuff)),
-            ])
-        return self.build_xml('createCustomerProfileRequest', root)
-
     def create_customer(self, options):
         xml = self._create_customer_xml(options)
         resp = xml_to_dict(xml_post(self.url, xml))
@@ -373,14 +381,6 @@ class AuthorizeNet(Gateway):
             pass
 
         return profile
-
-    def _update_customer_xml(self, customer_id, options):
-        stuff = [('email', options['email']), ('customerProfileId', customer_id)]
-
-        root = OrderedDict([
-            ('profile', OrderedDict(stuff)),
-            ])
-        return self.build_xml('updateCustomerProfileRequest', root)
 
     def _update_customer_payment(self, customer_id, options):
         # update <billTo> and <payment> fields only if
