@@ -173,6 +173,34 @@ class AuthorizeNet(Gateway):
         except KeyError:
             pass
 
+    ##|
+    ##|  XML BUILDERS
+    ##|
+    def _payment_xml(self, options):
+        expiry = str(options['month']) + '/' + str(options['year'])
+
+        return OrderedDict([
+            ('creditCard', OrderedDict([
+                ('cardNumber', prepare_number(options['number'])),
+                ('expirationDate', expiry),
+                ('cardCode', options.get('cvv')),
+                ])),
+            ])
+
+    def _billto_xml(self, options):
+        return OrderedDict([
+            ('firstName', options.get('first_name')),
+            ('lastName', options.get('last_name')),
+            ('company', options.get('company')),
+            ('address', options.get('address')),
+            ('city', options.get('city')),
+            ('state', options.get('state')),
+            ('zip', options.get('zip')),
+            ('country', options.get('country')),
+            ('phoneNumber', options.get('phone')),
+            ('faxNumber', options.get('fax')),
+            ])
+
     def transaction_details(self, resp, price):
         ret = {
                 'price': price,
@@ -199,27 +227,12 @@ class AuthorizeNet(Gateway):
         return ret
 
     def charge(self, price, options):
-        expiry = str(options['month']) + '/' + str(options['year'])
-
         xml = self.build_xml('createTransactionRequest', OrderedDict([
             ('transactionRequest', OrderedDict([
                 ('transactionType', 'authCaptureTransaction'),
                 ('amount', price),
-                ('payment', OrderedDict([
-                    ('creditCard', OrderedDict([
-                        ('cardNumber', prepare_number(options['number'])),
-                        ('expirationDate', expiry),
-                        ('cardCode', options.get('cvv')),
-                        ])),
-                    ])),
-                ('billTo', OrderedDict([
-                    ('firstName', options.get('first_name')),
-                    ('lastName', options.get('last_name')),
-                    ('address', options.get('address')),
-                    ('city', options.get('city')),
-                    ('state', options.get('state')),
-                    ('zip', options.get('zip')),
-                    ]),),
+                ('payment', self._payment_xml(options)),
+                ('billTo', self._billto_xml(options)),
                 ('transactionSettings', OrderedDict([
                     ('setting', [
                         OrderedDict([
@@ -268,15 +281,7 @@ class AuthorizeNet(Gateway):
             ('transactionRequest', OrderedDict([
                 ('transactionType', 'refundTransaction'),
                 ('amount', amount),
-                ('payment', OrderedDict([
-                    ('creditCard', OrderedDict([
-                        ('cardNumber', transaction.data['account_number']),
-                        # The XML Schema Definition requires that there be an
-                        # expirationDate element, however, the API does not
-                        # require it for refunds.
-                        ('expirationDate', 'XXXX'),
-                        ])),
-                    ])),
+                ('payment', self._payment_xml({'number': transaction.data['account_number'], 'year': 'XXXX', 'month': 'XX'})),
                 ('refTransId', transaction.transaction_id),
                 ])),
             ]))
@@ -304,34 +309,13 @@ class AuthorizeNet(Gateway):
             'fax',
             ]
         if any(field in options for field in bill_to_fields):
-            bill_to = ('billTo', OrderedDict([
-                            ('firstName', options.get('first_name')),
-                            ('lastName', options.get('last_name')),
-                            ('company', options.get('company')),
-                            ('address', options.get('address')),
-                            ('city', options.get('city')),
-                            ('state', options.get('state')),
-                            ('zip', options.get('zip')),
-                            ('country', options.get('country')),
-                            ('phoneNumber', options.get('phone')),
-                            ('faxNumber', options.get('fax')),
-                        ]))
+            bill_to = ('billTo', self._billto_xml(options))
         else:
             bill_to = None
 
         # build <payment> entry?
-        payment_fields = [
-            'number',
-            'year',
-            'month',
-            ]
-        if any(field in options for field in payment_fields):
-            payment = ('payment', OrderedDict([
-                            ('creditCard', OrderedDict([
-                                ('cardNumber', options.get('number')),
-                                ('expirationDate', options.get('year', '0000') + '-' + options.get('month', '00')),
-                                ])),
-                            ]))
+        if 'number' in options:
+            payment = ('payment', self._payment_xml(options))
         else:
             payment = None
 
@@ -395,34 +379,13 @@ class AuthorizeNet(Gateway):
             'fax',
             ]
         if any(field in options for field in bill_to_fields):
-            bill_to = ('billTo', OrderedDict([
-                            ('firstName', options.get('first_name')),
-                            ('lastName', options.get('last_name')),
-                            ('company', options.get('company')),
-                            ('address', options.get('address')),
-                            ('city', options.get('city')),
-                            ('state', options.get('state')),
-                            ('zip', options.get('zip')),
-                            ('country', options.get('country')),
-                            ('phoneNumber', options.get('phone')),
-                            ('faxNumber', options.get('fax')),
-                        ]))
+            bill_to = ('billTo', self._billto_xml(options))
         else:
             bill_to = None
 
         # update <payment> entry?
-        payment_fields = [
-            'number',
-            'year',
-            'month',
-            ]
-        if any(field in options for field in payment_fields):
-            payment = ('payment', OrderedDict([
-                            ('creditCard', OrderedDict([
-                                ('cardNumber', options.get('number')),
-                                ('expirationDate', options.get('year', '0000') + '-' + options.get('month', '00')),
-                                ])),
-                            ]))
+        if 'number' in options:
+            payment = ('payment', self._payment_xml(options))
         else:
             payment = None
 
