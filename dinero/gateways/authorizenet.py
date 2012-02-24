@@ -309,16 +309,16 @@ class AuthorizeNet(Gateway):
     RESPONSE_CODE = 0
     AUTH_CODE = 4
     TRANSACTION_ID = 6
-    ACCOUNT_NUMBER = 51
-    ACCOUNT_TYPE = 52
+    ACCOUNT_NUMBER = 50
+    ACCOUNT_TYPE = 51
 
     def transaction_details_direct_response(self, direct_resp, price):
         resp_list = direct_resp.split(',')
         ret = {
                 'price': price,
-                'transaction_id': resp_list[self.TRANSACTION_ID],
                 'response_code': resp_list[self.RESPONSE_CODE],
                 'auth_code': resp_list[self.AUTH_CODE],
+                'transaction_id': resp_list[self.TRANSACTION_ID],
                 'account_number': resp_list[self.ACCOUNT_NUMBER],
                 'card_type': resp_list[self.ACCOUNT_TYPE],
                 }
@@ -559,6 +559,8 @@ class AuthorizeNet(Gateway):
                 raise CustomerNotFoundError(e)
             raise
 
+        for i, item in enumerate(resp['directResponse'].split(',')):
+            print i, ':', item
         return self.transaction_details_direct_response(resp['directResponse'], price)
 
     def _get_customer_payment_profile(self, customer_id, customer_payment_profile_id):
