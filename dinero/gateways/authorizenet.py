@@ -181,10 +181,7 @@ class AuthorizeNet(Gateway):
     ##|
     def _payment_xml(self, options):
         year = str(options['year'])
-        if year == 'XXXX':
-            pass
-        # 2-digit years
-        elif int(year) < 100:
+        if year != 'XXXX' and int(year) < 100:
             century = date.today().century // 100
             year = str(century) + str(year)
 
@@ -393,6 +390,9 @@ class AuthorizeNet(Gateway):
         return True
 
     def create_customer(self, options):
+        if 'email' not in options:
+            raise InvalidCustomerException('"email" is a required field in Customer.create')
+
         xml = self._create_customer_xml(options)
         resp = xml_to_dict(xml_post(self.url, xml))
         try:
@@ -403,8 +403,10 @@ class AuthorizeNet(Gateway):
                 raise DuplicateCustomerError(e)
             raise
 
+        # make a copy of options
         profile = {}
         profile.update(options)
+        # and add information from the createCustomerProfileRequest response
         profile['customer_id'] = resp['customerProfileId']
         profile['customer_payment_profile_id'] = None
         try:
@@ -464,11 +466,15 @@ class AuthorizeNet(Gateway):
             # refresh billto and payment if merge came back with anything
             if merge:
                 billto = ('billTo', self._billto_xml(options))
-            stuff.append(billto)
+
+            if billto:
+                stuff.append(billto)
 
             if merge:
                 payment = ('payment', self._payment_xml(options))
-            stuff.append(payment)
+
+            if payment:
+                stuff.append(payment)
 
             if customer_payment_profile_id:
                 stuff.append(('customerPaymentProfileId', customer_payment_profile_id))
@@ -610,6 +616,7 @@ class AuthorizeNet(Gateway):
             'last_4': 'paymentProfiles.payment.creditCard.cardNumber',
 
             # auth.net specific
+            'number': 'paymentProfile.payment.creditCard.cardNumber',
             'customer_payment_profile_id': 'paymentProfiles.customerPaymentProfileId',
             }
         for key, kvp in gets.iteritems():

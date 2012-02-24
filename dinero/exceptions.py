@@ -72,11 +72,14 @@ class InvalidTransactionError(PaymentError):
 ##|
 ##|  CUSTOMER
 ##|
-class InvalidCustomerException(DineroException):
+class CustomerError(DineroException):
     pass
 
-class DuplicateCustomerError(PaymentError):
+class InvalidCustomerException(CustomerError):
     pass
 
-class CustomerNotFoundError(PaymentError):
+class DuplicateCustomerError(CustomerError):
+    pass
+
+class CustomerNotFoundError(CustomerError):
     pass

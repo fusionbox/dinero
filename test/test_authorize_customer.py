@@ -112,6 +112,45 @@ def test_CRUD_customer():
     customer.delete()
 
 
+def test_create_customer_with_number_change():
+    options = {
+        'email': 'someone@fusionbox.com',
+
+        'first_name': 'Joey',
+        'last_name': 'Shabadoo',
+        'company': 'Shabadoo, Inc.',
+        'phone': '000-000-0000',
+        'fax': '000-000-0001',
+        'address': '123 somewhere st',
+        'state': 'SW',
+        'city': 'somewhere',
+        'zip': '12345',
+        'country': 'US',
+
+        'number': '4' + '1' * 15,
+        'month': '12',
+        'year': '2012',
+    }
+    new_company = 'Joey Junior, Inc.'
+    new_number = '4' + '2' * 15
+    new_last_4_test = '2222'
+    new_year = '2012'
+    new_month = '12'
+
+    customer = dinero.Customer.create(**options)
+    customer.company = new_company
+    customer.number = new_number
+    customer.year = new_year
+    customer.month = new_month
+    customer.save()
+
+    customer = dinero.Customer.retrieve(customer_id)
+    assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
+    print customer
+    assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
+    customer.delete()
+
+
 def test_CRUD_customer_with_number_change():
     options = {
         'email': 'someone@fusionbox.com',
@@ -151,4 +190,20 @@ def test_CRUD_customer_with_number_change():
     assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
     print customer
     assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
+    customer.delete()
+
+
+def test_CRUD_customer_with_number_addition():
+    options = {
+        'email': 'someone@fusionbox.com',
+    }
+    number = '4' + '2' * 15
+    year = '2012'
+    month = '12'
+
+    customer = dinero.Customer.create(**options)
+    customer.number = number
+    customer.year = year
+    customer.month = month
+    customer.save()
     customer.delete()
