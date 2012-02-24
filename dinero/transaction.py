@@ -42,6 +42,18 @@ class Transaction(object):
     def to_dict(self):
         return vars(self)
 
+    def __getattr__(self, attr):
+        try:
+            return self.data[attr]
+        except KeyError as e:
+            raise AttributeError(e)
+
+    def __setattr__(self, attr, val):
+        if attr in ['gateway_name', 'transaction_id', 'price', 'data']:
+            self.__dict__[attr] = val
+        else:
+            self.data[attr] = val
+
     @classmethod
     def from_dict(cls, dict):
         return cls(dict['gateway_name'],

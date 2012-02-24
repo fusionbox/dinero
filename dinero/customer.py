@@ -51,7 +51,7 @@ class Customer(object):
             raise AttributeError(e)
 
     def __setattr__(self, attr, val):
-        if attr in ['gateway_name', 'customer_id', 'resp', 'data']:
+        if attr in ['gateway_name', 'customer_id', 'data']:
             self.__dict__[attr] = val
         else:
             self.data[attr] = val
