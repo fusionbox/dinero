@@ -95,12 +95,44 @@ customer = dinero.Customer.create(
     zip='12345',
     country='US',  # this is the 2-letter country code
 
-    # credit card information
-    number='4111''1111''1111''1111',
+    # credit card information is required
+    number='4111-1111-1111-1111',  # dinero removes all symbols *except X*
+    year=2012,                     # Why?  Authorize.net expects credit card numbers in the form
+    month=2,                       # "XXXX1111" when updating payment information
+    )
+
+# the most important value:
+customer_id = customer.customer_id
+
+# and later, to update some information
+customer = dinero.Customer.retrieve(customer_id)
+customer.company = 'Joey Junior, Inc.'
+customer.save()
+
+# you can update the CC, too
+customer = dinero.Customer.retrieve(customer_id)
+customer.number = '4222-2222-2222-2222'
+customer.year = '2012'
+customer.month = '02'
+customer.save()
+```
+
+The credit card information is required, at least on Authorize.net.  So, assuming you've got a customer
+object, you can now make transactions against it.
+
+```python
+customer = dinero.Customer.create(
+    # minimum information to create a new account
+    email='joeyjoejoejunior@example.com',
+    number='4111-1111-1111-1111',
     year='2012',
     month='02',
     )
 
+transaction = dinero.Transaction.create(
+    price=2000,
+    customer=customer
+    )
 ```
 
 ## TESTING

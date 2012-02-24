@@ -177,23 +177,7 @@ def test_customer_create_xml():
 def test_update_customer_xml():
     gateway = dinero.get_gateway()
     options = {
-        'customer_payment_profile_id': '987654321',
         'email': 'someone@fusionbox.com',
-
-        'first_name': 'Joey',
-        'last_name': 'Shabadoo',
-        'company': 'Shabadoo, Inc.',
-        'phone': '000-000-0000',
-        'fax': '000-000-0001',
-        'address': '123 somewhere st',
-        'state': 'SW',
-        'city': 'somewhere',
-        'zip': '12345',
-        'country': 'US',
-
-        'number': '4' + '1' * 15,
-        'month': '12',
-        'year': '2012',
     }
     xml = gateway._update_customer_xml('123456789', options)
     should_be = trimmy(
@@ -209,5 +193,39 @@ def test_update_customer_xml():
                 </updateCustomerProfileRequest>""".format(
                         login_id=gateway.login_id,
                         transaction_key=gateway.transaction_key,
+                    ))
+    assert etree.tostring(xml) == should_be, "Invalid XML (\n\t%s\n\t%s\n)" % (etree.tostring(xml), should_be)
+
+
+def test_charge_customer_xml():
+    gateway = dinero.get_gateway()
+    price = 123.45
+    customer_id = '123456789'
+    customer_payment_profile_id = '987654321'
+    options = {
+        'cvv': '123'
+    }
+    xml = gateway._charge_customer_xml(customer_id, customer_payment_profile_id, price, options)
+    should_be = trimmy(
+             """<createCustomerProfileTransactionRequest xmlns="AnetApi/xml/v1/schema/AnetApiSchema.xsd">
+                    <merchantAuthentication>
+                        <name>{login_id}</name>
+                        <transactionKey>{transaction_key}</transactionKey>
+                    </merchantAuthentication>
+                    <transaction>
+                        <profileTransAuthOnly>
+                            <amount>{price}</amount>
+                            <customerProfileId>{customer_id}</customerProfileId>
+                            <customerPaymentProfileId>{customer_payment_profile_id}</customerPaymentProfileId>
+                            <cardCode>{cvv}</cardCode>
+                        </profileTransAuthOnly>
+                    </transaction>
+                </createCustomerProfileTransactionRequest>""".format(
+                        login_id=gateway.login_id,
+                        transaction_key=gateway.transaction_key,
+                        price=price,
+                        customer_id=customer_id,
+                        customer_payment_profile_id=customer_payment_profile_id,
+                        **options
                     ))
     assert etree.tostring(xml) == should_be, "Invalid XML (\n\t%s\n\t%s\n)" % (etree.tostring(xml), should_be)

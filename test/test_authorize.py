@@ -62,7 +62,7 @@ def test_declined():
 
 
 def test_duplicate():
-    price = random.randint(1000, 10000)
+    price = float(random.randint(100000, 1000000)) / 100
     transact([], price)
     transact([DuplicateTransactionError], price)
 
