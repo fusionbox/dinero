@@ -51,3 +51,12 @@ class Braintree(Gateway):
 
     def retrieve(self, transaction_id):
         raise NotImplementedError
+
+    def create_customer(self):
+        raise NotImplementedError
+
+    def update_customer(self, customer_id):
+        raise NotImplementedError
+
+    def delete_customer(self, customer_id):
+        raise NotImplementedError
