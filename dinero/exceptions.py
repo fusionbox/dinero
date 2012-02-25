@@ -48,7 +48,7 @@ class CVVError(VerificationError):
 class AVSError(VerificationError):
     pass
 
-class CardInvalidError(PaymentError):
+class InvalidCardError(PaymentError):
     pass
 
 class InvalidAmountError(PaymentError):

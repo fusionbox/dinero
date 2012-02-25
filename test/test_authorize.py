@@ -46,11 +46,11 @@ def test_expiry():
 
 
 def test_invalid_card():
-    transact([CardInvalidError], number='4' + '1' * 14)
+    transact([InvalidCardError], number='4' + '1' * 14)
 
 
 def test_invalid_card_and_expiry():
-    transact([CardInvalidError, ExpiryError], number='4' + '1' * 14, month='12', year='2010')
+    transact([InvalidCardError, ExpiryError], number='4' + '1' * 14, month='12', year='2010')
 
 
 def test_invalid_amount():

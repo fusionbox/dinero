@@ -21,14 +21,15 @@ def test_create_customer_no_email_error():
         pass
 
 
-def test_create_customer_no_payment_info_error():
+def test_create_customer_not_enough_payment_info_error():
     options = {
         'email': 'someone@fusionbox.com',
+        'number': '4' + '1' * 14
     }
 
     try:
         customer = dinero.Customer.create(**options)
         customer.delete()
         assert False
-    except InvalidCustomerException:
+    except InvalidCardError:
         pass

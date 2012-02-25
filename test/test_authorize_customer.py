@@ -146,7 +146,6 @@ def test_create_customer_with_number_change():
 
     customer = dinero.Customer.retrieve(customer_id)
     assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
-    print customer
     assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
     customer.delete()
 
@@ -188,7 +187,6 @@ def test_CRUD_customer_with_number_change():
 
     customer = dinero.Customer.retrieve(customer_id)
     assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
-    print customer
     assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
     customer.delete()
 

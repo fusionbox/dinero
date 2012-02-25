@@ -21,6 +21,5 @@ def test_customer_transaction():
 
     customer = dinero.Customer.create(**options)
     transaction = dinero.Transaction.create(price, customer=customer)
-    print transaction
     transaction.refund()
     customer.delete()

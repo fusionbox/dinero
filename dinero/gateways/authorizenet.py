@@ -99,8 +99,8 @@ def get_first_of(dict, possibilities, default=None):
 
 RESPONSE_CODE_EXCEPTION_MAP = {
         '8': [ExpiryError],
-        '6': [CardInvalidError],
-        '37': [CardInvalidError],
+        '6': [InvalidCardError],
+        '37': [InvalidCardError],
         '5': [InvalidAmountError],
         '27': [AVSError],
         '65': [CVVError],
@@ -117,6 +117,7 @@ def payment_exception_factory(errors):
     exceptions = []
     for code, message in errors:
         try:
+            # instantiate all the classes in RESPONSE_CODE_EXCEPTION_MAP[code]
             exceptions.extend(exception_class(message) for exception_class in RESPONSE_CODE_EXCEPTION_MAP[code])
         except KeyError:
             raise Exception("I don't recognize this error: {0!r}. Better call the programmers.".format(errors))
@@ -180,13 +181,13 @@ class AuthorizeNet(Gateway):
     ##|  XML BUILDERS
     ##|
     def _payment_xml(self, options):
-        year = str(options['year'])
+        year = str(options.get('year', '0'))
         if year != 'XXXX' and int(year) < 100:
-            century = date.today().century // 100
-            year = str(century) + str(year)
+            century = date.today().year // 100
+            year = str(century) + str(year).zfill(2)
 
         # zeropad the month
-        expiry = str(year) + '-' + str(options['month']).zfill(2)
+        expiry = str(year) + '-' + str(options.get('month', '0')).zfill(2)
         if expiry == 'XXXX-XX':
             expiry = 'XXXX'
 
@@ -401,6 +402,8 @@ class AuthorizeNet(Gateway):
             error_code = e.args[0][0][0]
             if error_code == 'E00039':  # Duplicate Record
                 raise DuplicateCustomerError(e)
+            elif error_code == 'E00013':  # Expiration Date is invalid
+                raise InvalidCardError(e)
             raise
 
         # make a copy of options
@@ -499,6 +502,8 @@ class AuthorizeNet(Gateway):
                 error_code = e.args[0][0][0]
                 if error_code == 'E00039':  # Duplicate Record
                     raise DuplicateCustomerError(e)
+                elif error_code == 'E00013':  # Expiration Date is invalid
+                    raise InvalidCardError(e)
                 raise
 
     def update_customer(self, customer_id, options):
@@ -565,8 +570,6 @@ class AuthorizeNet(Gateway):
                 raise CustomerNotFoundError(e)
             raise
 
-        for i, item in enumerate(resp['directResponse'].split(',')):
-            print i, ':', item
         return self.transaction_details_direct_response(resp['directResponse'], price)
 
     def _get_customer_payment_profile(self, customer_id, customer_payment_profile_id):
