@@ -2,3 +2,4 @@ dist/
 build/
 *.egg-info
 *.pyc
+test/authorize_net_configuration.py
