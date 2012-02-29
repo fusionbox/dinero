@@ -15,18 +15,19 @@ def transact(desired_errors, price=None, number='4' + '1' * 15, month='12', year
         price = float(random.randint(1, 100000)) / 100
 
     try:
-        return dinero.Transaction.create(price, number=number, month=month, year=year, **kwargs)
+        transaction = dinero.Transaction.create(price, number=number, month=month, year=year, **kwargs)
     except PaymentException as e:
         for error in desired_errors:
             assert error in e
         assert desired_errors
     else:
-        assert not desired_errors, 'was not supposed to throw an error'
+        assert not desired_errors, 'was supposed to throw %s' % str(desired_errors)
+        return transaction
 
 
 def test_avs():
     # AVS data provided is invalid or AVS is not allowed for the card type that was used.
-    transact([VerificationError, AVSError], zip=46203)
+    transact([AVSError], zip=46203)
 
     # Address: No Match ZIP Code: No Match
     transact([AVSError], zip=46205)

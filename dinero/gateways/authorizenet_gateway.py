@@ -98,14 +98,14 @@ def get_first_of(dict, possibilities, default=None):
 
 
 RESPONSE_CODE_EXCEPTION_MAP = {
-        '8': [ExpiryError],
-        '6': [InvalidCardError],
+        '8':  [ExpiryError],
+        '6':  [InvalidCardError],
         '37': [InvalidCardError],
-        '5': [InvalidAmountError],
+        '5':  [InvalidAmountError],
         '27': [AVSError],
         '65': [CVVError],
         '45': [AVSError, CVVError],
-        '2': [CardDeclinedError],
+        '2':  [CardDeclinedError],
         '11': [DuplicateTransactionError],
         '54': [RefundError],
         '33': [InvalidTransactionError],
@@ -380,7 +380,11 @@ class AuthorizeNet(Gateway):
             ('transactionRequest', OrderedDict([
                 ('transactionType', 'refundTransaction'),
                 ('amount', amount),
-                ('payment', self._payment_xml({'number': transaction.data['account_number'], 'year': 'XXXX', 'month': 'XX'})),
+                ('payment', self._payment_xml({
+                    'number': transaction.data['account_number'],
+                    'year': 'XXXX',
+                    'month': 'XX'
+                })),
                 ('refTransId', transaction.transaction_id),
                 ])),
             ]))

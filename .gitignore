@@ -3,3 +3,4 @@ build/
 *.egg-info
 *.pyc
 test/authorize_net_configuration.py
+test/braintree_configuration.py
