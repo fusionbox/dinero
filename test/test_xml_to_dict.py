@@ -143,7 +143,7 @@ class TestDictToXml(unittest.TestCase):
     def _test(self, should, dict, root):
         import textwrap
         xml = etree.XML(textwrap.dedent(should))
-        actual = dinero.gateways.authorizenet_gateway.dict_to_xml(root, dict)
+        actual = dinero.gateways.authorizenet_gateway._dict_to_xml(root, dict)
 
         assert etree.tostring(actual, pretty_print=True) == \
                 etree.tostring(xml, pretty_print=True)

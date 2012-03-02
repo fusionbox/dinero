@@ -15,7 +15,7 @@ class Gateway(object):
     def retrieve(self, transaction_id):
         raise NotImplementedError
 
-    def create_customer(self):
+    def create_customer(self, options):
         raise NotImplementedError
 
     def update_customer(self, customer_id):

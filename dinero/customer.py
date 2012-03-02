@@ -19,6 +19,7 @@ class Customer(object):
     def retrieve(cls, customer_id, gateway_name=None):
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve_customer(customer_id)
+        # resp must have customer_id in it
         return cls(gateway_name=gateway.name, **resp)
 
     def __init__(self, gateway_name, customer_id, **kwargs):

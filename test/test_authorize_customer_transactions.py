@@ -19,7 +19,7 @@ def test_customer_transaction():
     }
     price = float(random.randint(1, 100000)) / 100
 
-    customer = dinero.Customer.create(**options)
-    transaction = dinero.Transaction.create(price, customer=customer)
+    customer = dinero.Customer.create(gateway_name='authorize.net', **options)
+    transaction = dinero.Transaction.create(price, customer=customer, gateway_name='authorize.net')
     transaction.refund()
     customer.delete()

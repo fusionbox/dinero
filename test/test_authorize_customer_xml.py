@@ -15,7 +15,7 @@ def trimmy(s):
 
 
 def test_minimum_create_customer_xml():
-    gateway = dinero.get_gateway()
+    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
     }
@@ -37,7 +37,7 @@ def test_minimum_create_customer_xml():
 
 
 def test_payment_create_customer_xml():
-    gateway = dinero.get_gateway()
+    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
 
@@ -71,7 +71,7 @@ def test_payment_create_customer_xml():
 
 
 def test_billto_create_customer_xml():
-    gateway = dinero.get_gateway()
+    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
 
@@ -118,7 +118,7 @@ def test_billto_create_customer_xml():
 
 
 def test_customer_create_xml():
-    gateway = dinero.get_gateway()
+    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
 
@@ -175,7 +175,7 @@ def test_customer_create_xml():
 
 
 def test_update_customer_xml():
-    gateway = dinero.get_gateway()
+    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
     }
@@ -198,7 +198,7 @@ def test_update_customer_xml():
 
 
 def test_charge_customer_xml():
-    gateway = dinero.get_gateway()
+    gateway = dinero.get_gateway('authorize.net')
     price = 123.45
     customer_id = '123456789'
     customer_payment_profile_id = '987654321'

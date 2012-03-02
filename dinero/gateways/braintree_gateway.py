@@ -1,8 +1,34 @@
+import re
 import braintree
 from braintree.exceptions import NotFoundError
 
 from dinero.exceptions import *
 from dinero.gateways.base import Gateway
+
+
+# CVV RESPONSES
+# M = Match
+# N = Does not Match
+# U = Not Verified
+# I = Not Provided
+# A = Not Applicable
+CVV_SUCCESSFUL_RESPONSES = ['M']
+
+# AVS POSTAL CODE RESPONSE CODE
+# M = Matches
+# N = Does not Match
+# U = Not Verified
+# I = Not Provided
+# A = Not Applicable
+AVS_ZIP_SUCCESSFUL_RESPONSES = ['M'],
+
+# AVS STREET ADDRESS CODE RESPONSE CODE
+# M = Matches
+# N = Does not Match
+# U = Not Verified
+# I = Not Provided
+# A = Not Applicable
+AVS_ADDRESS_SUCCESSFUL_RESPONSES = ['M']
 
 
 CREDITCARD_ERRORS = {
@@ -27,7 +53,7 @@ CREDITCARD_ERRORS = {
     '81712': [InvalidCardError],  # Expiration month is invalid.
     '81713': [InvalidCardError],  # Expiration year is invalid.
     '81714': [InvalidCardError],  # Credit card number is required.
-    '81715': [InvalidCardError],  # Credit card number is invalid.
+    '81715': [InvalidTransactionError],  # Credit card number is invalid.
     '81716': [InvalidCardError],  # Credit card number must be 12-19 digits.
     '81717': [InvalidCardError],  # Credit card number is not an accepted test number.
     '91723': [GatewayException],  # Update Existing Token is invalid.
@@ -212,7 +238,7 @@ def _convert_amount(price):
     return amount, price
 
 
-def check_for_errors(result):
+def check_for_transaction_errors(result):
     if not result.is_success:
         if result.transaction:
             if result.transaction.gateway_rejection_reason:
@@ -227,10 +253,13 @@ def check_for_errors(result):
                     ])
             raise PaymentException(result.transaction.processor_response_text)
 
-        # sometimes duplicate errors are returned, don't know why, but let's just use one.
+        check_for_errors(result)
+
+
+def check_for_errors(result):
+    if not result.is_success:
         error_codes = {}
         for error in result.errors.deep_errors:
-            print vars(error)
             if error.code in VALIDATION_ERRORS:
                 error_codes[error.code] = [
                     # instantiate an exception for every class in VALIDATION_ERRORS[error.code]
@@ -241,6 +270,9 @@ def check_for_errors(result):
         flattened_errors = []
         for errors in error_codes.values():
             flattened_errors.extend(errors)
+        if not flattened_errors:
+            PaymentException([result.message])
+        print flattened_errors
         raise PaymentException(flattened_errors)
 
 
@@ -289,11 +321,24 @@ class Braintree(Gateway):
             },
         })
 
-        check_for_errors(result)
-        return {
-                'price': price,
-                'transaction_id': result.transaction.id,
-                }
+        check_for_transaction_errors(result)
+        return self._transaction_to_transaction_dict(result.transaction)
+
+    def _transaction_to_transaction_dict(self, transaction):
+        ret = {
+            'transaction_id': transaction.id,
+            'avs_zip_successful': transaction.avs_postal_code_response_code in AVS_ZIP_SUCCESSFUL_RESPONSES,
+            'avs_address_successful': transaction.avs_street_address_response_code in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
+            'cvv_successful': transaction.cvv_response_code in CVV_SUCCESSFUL_RESPONSES,
+            'auth_code': transaction.processor_authorization_code,
+            'price': transaction.amount,
+            'account_number': transaction.credit_card_details.masked_number,
+            'card_type': transaction.credit_card_details.card_type,
+            'last_4': transaction.credit_card_details.last_4,
+        }
+        ret['avs_successful'] = ret['avs_zip_successful'] and ret['avs_address_successful']
+
+        return ret
 
     def void(self, transaction):
         try:
@@ -301,7 +346,7 @@ class Braintree(Gateway):
         except NotFoundError as e:
             raise PaymentException([InvalidTransactionError(e)])
 
-        check_for_errors(result)
+        check_for_transaction_errors(result)
         return True
 
     def refund(self, transaction, price):
@@ -312,17 +357,186 @@ class Braintree(Gateway):
         except NotFoundError as e:
             raise PaymentException([InvalidTransactionError(e)])
 
-        check_for_errors(result)
+        check_for_transaction_errors(result)
         return True
 
     def retrieve(self, transaction_id):
-        raise NotImplementedError
+        try:
+            result = braintree.Transaction.find(transaction_id)
+        except NotFoundError as e:
+            raise PaymentException([InvalidTransactionError(e)])
 
-    def create_customer(self):
-        raise NotImplementedError
+        return self._transaction_to_transaction_dict(result)
 
-    def update_customer(self, customer_id):
-        raise NotImplementedError
+    def create_customer(self, options):
+        customer, address, credit_card = self._create_all_from_dict(options)
+        try:
+            result = braintree.Customer.create(customer)
+            check_for_errors(result)
+            if address:
+                address['customer_id'] = result.customer.id
+                address_result = braintree.Address.create(address)
+                if not address_result.is_success:
+                    result.braintree.Customer.delete(result.customer.id)
+                    check_for_errors(address_result)
+                result.customer.addresses = [address_result.address]
+
+            if credit_card:
+                credit_card['customer_id'] = result.customer.id
+                credit_card_result = braintree.CreditCard.create(credit_card)
+                if not credit_card_result.is_success:
+                    result.braintree.Customer.delete(result.customer.id)
+                    check_for_errors(credit_card_result)
+                result.customer.credit_cards = [credit_card_result.credit_card]
+
+        except NotFoundError as e:
+            raise PaymentException([InvalidTransactionError(e)])
+
+        profile = {}
+        profile.update(options)
+        profile['customer_id'] = result.customer.id
+
+        return profile
+
+    def retrieve_customer(self, customer_id):
+        try:
+            customer_result = braintree.Customer.find(str(customer_id))
+        except NotFoundError as e:
+            raise CustomerNotFoundError(e)
+
+        return self._customer_from_customer_result(customer_result)
 
     def delete_customer(self, customer_id):
-        raise NotImplementedError
+        try:
+            result = braintree.Customer.delete(str(customer_id))
+        except NotFoundError as e:
+            raise CustomerNotFoundError(e)
+
+        check_for_errors(result)
+        return True
+
+    def update_customer(self, customer_id, options):
+        update_options = options
+        if 'number' in update_options:
+            update_options = {}
+            update_options.update(options)
+            del update_options['number']
+        customer, address, credit_card = self._create_all_from_dict(options)
+
+        credit_card_token = None
+        address_id = None
+        try:
+            credit_card_token = options['credit_card_token']
+        except KeyError:
+            customer_result = braintree.Customer.find(customer_id)
+            if customer_result.credit_cards:
+                credit_card_token = customer_result.credit_cards[0].token
+
+        try:
+            address_id = options['address_id']
+        except KeyError:
+            customer_result = braintree.Customer.find(customer_id)
+            if customer_result.addresses:
+                address_id = customer_result.addresses[0].id
+
+        try:
+            if customer:
+                customer_result = braintree.Customer.update(customer_id, customer)
+                check_for_errors(customer_result)
+
+            if address and address_id:
+                address_result = braintree.Address.update(customer_id, address_id, address)
+                check_for_errors(address_result)
+
+            if credit_card and credit_card_token:
+                credit_card_result = braintree.CreditCard.update(credit_card_token, credit_card)
+                check_for_errors(credit_card_result)
+        except NotFoundError as e:
+            raise CustomerNotFoundError(e)
+
+        return True
+
+    def _customer_from_customer_result(self, customer_result):
+        ret = {}
+
+        gets = {
+            'customer_id':                 'id',
+            'first_name':                  'first_name',
+            'last_name':                   'last_name',
+            'company':                     'company',
+            'phone':                       'phone',
+            'fax':                         'fax',
+            'address':                     'addresses[0].street_address',
+            'state':                       'addresses[0].locality',
+            'city':                        'addresses[0].region',
+            'zip':                         'addresses[0].postal_code',
+            'country':                     'addresses[0].country_code_alpha2',
+            'last_4':                      'credit_cards[0].last_4',
+            # braintree specific
+            'credit_card_token':           'credit_cards[0].token',
+            'address_id':                  'addresses[0].id',
+        }
+
+        for key, kvp in gets.iteritems():
+            orig_key = key
+            try:
+                kvp = kvp.replace('[', '.').replace(']', '')
+                search = kvp.split('.')
+                val = customer_result
+                while search:
+                    current_key = search.pop(0)
+                    if re.match('[0-9]+$', current_key):
+                        val = val[int(current_key)]
+                    else:
+                        val = getattr(val, current_key)
+
+                ret[key] = val
+            except KeyError:
+                pass
+
+        return ret
+
+    def _create_all_from_dict(self, options):
+        customer = {}
+        address = {}
+        credit_card = {}
+
+        customer_fields = {
+            'email': 'email',
+            'first_name': 'first_name',
+            'last_name': 'last_name',
+            'company': 'company',
+            'phone': 'phone',
+            'fax': 'fax'
+        }
+        for field, braintree_field in customer_fields.iteritems():
+            if field in options:
+                customer[braintree_field] = options[field]
+
+        address_fields = {
+            'first_name': 'first_name',
+            'last_name': 'last_name',
+            'company': 'company',
+            'address': 'street_address',
+            'state': 'locality',
+            'city': 'region',
+            'zip': 'postal_code',
+            'country': 'country_name'
+        }
+        for field, braintree_field in address_fields.iteritems():
+            if field in options:
+                address[braintree_field] = options[field]
+
+        credit_card_fields = {
+            'number': 'number',
+            'month': 'expiration_month',
+            'year': 'expiration_year'
+        }
+        for field, braintree_field in credit_card_fields.iteritems():
+            if field in options:
+                credit_card[braintree_field] = options[field]
+
+        if address:
+            credit_card['billing_address'] = address
+
+        return customer, address, credit_card

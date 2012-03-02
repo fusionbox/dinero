@@ -9,6 +9,53 @@ from dinero.gateways.base import Gateway
 
 from datetime import date
 
+# resonseCodes
+# 1 = Approved
+# 2 = Declined
+# 3 = Error
+# 4 = Held for Review
+SUCCESSFUL_RESPONSES = ['1']
+
+# CVV RESPONSES
+# M = Match
+# N = No Match
+# P = Not Processed
+# S = Should have been present
+# U = Issuer unable to process request
+CVV_SUCCESSFUL_RESPONSES = ['M']
+
+# AVS RESPONSES
+# A = Address (Street) matches, ZIP does not
+# B = Address information not provided for AVS check
+# E = AVS error
+# G = Non.S. Card Issuing Bank
+# N = No Match on Address (Street) or ZIP
+# P = AVS not applicable for this transaction
+# R = Retry System unavailable or timed out
+# S = Service not supported by issuer
+# U = Address information is unavailable
+# W = Nine digit ZIP matches, Address (Street) does not
+# X = Address (Street) and nine digit ZIP match
+# Y = Address (Street) and five digit ZIP match
+# Z = Five digit ZIP matches, Address (Street) does not
+AVS_SUCCESSFUL_RESPONSES = [
+    'X',  # Address (Street) and nine digit ZIP match
+    'Y',  # Address (Street) and five digit ZIP match
+]
+
+AVS_ZIP_SUCCESSFUL_RESPONSES = [
+    'W',  # Nine digit ZIP matches, Address (Street) does not
+    'X',  # Address (Street) and nine digit ZIP match
+    'Y',  # Address (Street) and five digit ZIP match
+    'Z',  # Five digit ZIP matches, Address (Street) does not
+]
+
+AVS_ADDRESS_SUCCESSFUL_RESPONSES = [
+    'A',  # Address (Street) matches, ZIP does not
+    'X',  # Address (Street) and nine digit ZIP match
+    'Y',  # Address (Street) and five digit ZIP match
+]
+
 
 def xml_post(url, obj):
     resp = requests.post(
@@ -35,12 +82,12 @@ def handle_value(root, key, value):
         sub = etree.SubElement(root, key)
 
         if isinstance(value, dict):
-            dict_to_xml(sub, value)
+            _dict_to_xml(sub, value)
         elif value:
             sub.text = str(value)
 
 
-def dict_to_xml(root, dictionary, ns=None):
+def _dict_to_xml(root, dictionary, ns=None):
     if isinstance(root, basestring):
         if ns is None:
             nsmap = None
@@ -158,7 +205,7 @@ class AuthorizeNet(Gateway):
                 ('transactionKey', self.transaction_key),
                 ]))
 
-        return dict_to_xml(root_name, root, self.ns)
+        return _dict_to_xml(root_name, root, self.ns)
 
     def check_for_error(self, resp):
         if resp['messages']['resultCode'] == 'Error':
@@ -279,22 +326,25 @@ class AuthorizeNet(Gateway):
                 ]))
             ]))
 
-    def transaction_details(self, resp, price):
+    def _resp_to_transaction_dict(self, resp, price):
         ret = {
                 'price': price,
                 'transaction_id': resp['transId'],
-                'avs_result_code': get_first_of(resp, ['avsResultCode', 'AVSResponse']),
-                'cvv_result_code': get_first_of(resp, ['cvvResultCode', 'cardCodeResponse']),
-                'cavv_result_code': resp.get('cavvResultCode'),
-                'response_code': resp['responseCode'],
+                'avs_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_SUCCESSFUL_RESPONSES,
+                'cvv_successful': get_first_of(resp, ['cvvResultCode', 'cardCodeResponse']) in CVV_SUCCESSFUL_RESPONSES,
+                'avs_zip_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ZIP_SUCCESSFUL_RESPONSES,
+                'avs_address_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
                 'auth_code': resp.get('authCode'),
                 }
+
         try:
             ret['account_number'] = resp['accountNumber']
             ret['card_type'] = resp['accountType']
         except KeyError:
             ret['account_number'] = resp['payment']['creditCard']['cardNumber']
             ret['card_type'] = resp['payment']['creditCard']['cardType']
+
+        ret['last_4'] = ret['account_number'][-4:]
 
         try:
             ret['messages'] = [(message['code'], message['description'])
@@ -310,7 +360,7 @@ class AuthorizeNet(Gateway):
     ACCOUNT_NUMBER = 50
     ACCOUNT_TYPE = 51
 
-    def transaction_details_direct_response(self, direct_resp, price):
+    def _resp_to_transaction_dict_direct_response(self, direct_resp, price):
         resp_list = direct_resp.split(',')
         ret = {
                 'price': price,
@@ -319,6 +369,7 @@ class AuthorizeNet(Gateway):
                 'transaction_id': resp_list[self.TRANSACTION_ID],
                 'account_number': resp_list[self.ACCOUNT_NUMBER],
                 'card_type': resp_list[self.ACCOUNT_TYPE],
+                'last_4': resp_list[self.ACCOUNT_NUMBER][-4:],
                 }
         return ret
 
@@ -350,7 +401,7 @@ class AuthorizeNet(Gateway):
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
 
-        return self.transaction_details(resp['transactionResponse'], price)
+        return self._resp_to_transaction_dict(resp['transactionResponse'], price)
 
     def retrieve(self, transaction_id):
         xml = self.build_xml('getTransactionDetailsRequest', OrderedDict([
@@ -360,7 +411,7 @@ class AuthorizeNet(Gateway):
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
 
-        return self.transaction_details(resp['transaction'], resp['transaction']['authAmount'])
+        return self._resp_to_transaction_dict(resp['transaction'], resp['transaction']['authAmount'])
 
     def void(self, transaction):
         xml = self.build_xml('createTransactionRequest', OrderedDict([
@@ -415,6 +466,7 @@ class AuthorizeNet(Gateway):
         profile.update(options)
         # and add information from the createCustomerProfileRequest response
         profile['customer_id'] = resp['customerProfileId']
+        # authorize.net only:
         profile['customer_payment_profile_id'] = None
         try:
             if resp['customerPaymentProfileIdList'] and resp['customerPaymentProfileIdList']['numericString']:
@@ -463,7 +515,7 @@ class AuthorizeNet(Gateway):
             if customer_payment_profile_id:
                 try:
                     profile = self._get_customer_payment_profile(customer_id, customer_payment_profile_id)
-                    merge = self.dict_to_payment_profile(profile)
+                    merge = self._dict_to_payment_profile(profile)
                     merge.update(options)
                     options = merge
                 except CustomerNotFoundError:
@@ -539,7 +591,7 @@ class AuthorizeNet(Gateway):
                 raise CustomerNotFoundError(e)
             raise
 
-        return self.dict_to_customer(resp['profile'])
+        return self._dict_to_customer(resp['profile'])
 
     def delete_customer(self, customer_id):
         xml = self.build_xml('deleteCustomerProfileRequest', OrderedDict([
@@ -574,7 +626,7 @@ class AuthorizeNet(Gateway):
                 raise CustomerNotFoundError(e)
             raise
 
-        return self.transaction_details_direct_response(resp['directResponse'], price)
+        return self._resp_to_transaction_dict_direct_response(resp['directResponse'], price)
 
     def _get_customer_payment_profile(self, customer_id, customer_payment_profile_id):
         xml = self.build_xml('getCustomerPaymentProfileRequest', OrderedDict([
@@ -592,7 +644,7 @@ class AuthorizeNet(Gateway):
 
         return resp
 
-    def dict_to_customer(self, resp):
+    def _dict_to_customer(self, resp):
         ret = {
                 'customer_id': resp['customerProfileId'],
                 'email': resp['email'],
@@ -649,7 +701,7 @@ class AuthorizeNet(Gateway):
 
         return ret
 
-    def dict_to_payment_profile(self, resp):
+    def _dict_to_payment_profile(self, resp):
         ret = {}
 
         try:

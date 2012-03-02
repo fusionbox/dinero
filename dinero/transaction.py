@@ -64,3 +64,8 @@ class Transaction(object):
 
     def __repr__(self):
         return "Transaction({gateway_name!r}, {price!r}, {transaction_id!r}, **{data!r})".format(**self.to_dict())
+
+    def __eq__(self, other):
+        if not isinstance(other, Transaction):
+            return False
+        return self.transaction_id == other.transaction_id

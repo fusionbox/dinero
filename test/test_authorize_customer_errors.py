@@ -14,7 +14,7 @@ def test_create_customer_no_email_error():
     }
 
     try:
-        customer = dinero.Customer.create(**options)
+        customer = dinero.Customer.create(gateway_name='authorize.net', **options)
         customer.delete()
         assert False, "InvalidCustomerException should be raised"
     except InvalidCustomerException:
@@ -28,7 +28,7 @@ def test_create_customer_not_enough_payment_info_error():
     }
 
     try:
-        customer = dinero.Customer.create(**options)
+        customer = dinero.Customer.create(gateway_name='authorize.net', **options)
         customer.delete()
         assert False
     except InvalidCardError:

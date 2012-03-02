@@ -11,7 +11,7 @@ import braintree_configuration
 
 def transact(desired_errors, price, number='4' + '1' * 15, month='12', year='2030', **kwargs):
     try:
-        transaction = dinero.Transaction.create(price, number=number, month=month, year=year, **kwargs)
+        transaction = dinero.Transaction.create(price, number=number, month=month, year=year, gateway_name='braintree', **kwargs)
     except PaymentException as e:
         if not desired_errors:
             assert False, e
@@ -25,6 +25,12 @@ def transact(desired_errors, price, number='4' + '1' * 15, month='12', year='203
 
 def test_successful():
     transact([], price='2.00')
+
+
+def test_successful_retrieve():
+    transaction = transact([], price='3.00')
+    transaction_retrieved = dinero.Transaction.retrieve(transaction.transaction_id, gateway_name='braintree')
+    assert transaction == transaction_retrieved, 'Transactions are not "equal"'
 
 
 def test_avs():
@@ -65,14 +71,14 @@ def test_declined():
 
 
 def test_duplicate():
-    transact([], price='3.00')
-    transact([DuplicateTransactionError], price='3.00')
+    transact([], price='4.00')
+    transact([DuplicateTransactionError], price='4.00')
 
 
 def test_cant_refund_unsettled():
-    transaction = transact([], price='4.00')
+    transaction = transact([], price='5.00')
     try:
-        dinero.get_gateway().refund(transaction, transaction.price)
+        dinero.get_gateway('braintree').refund(transaction, transaction.price)
     except PaymentException as e:
         assert RefundError in e
     else:
@@ -80,9 +86,9 @@ def test_cant_refund_unsettled():
 
 
 def test_cant_refund_more():
-    transaction = transact([], price='5.00')
+    transaction = transact([], price='6.00')
     try:
-        dinero.get_gateway().refund(transaction, transaction.price + 1)
+        dinero.get_gateway('braintree').refund(transaction, transaction.price + 1)
     except PaymentException as e:
         assert RefundError in e
     else:
@@ -90,10 +96,10 @@ def test_cant_refund_more():
 
 
 def test_invalid_transaction():
-    transaction = transact([], price='6.00')
+    transaction = transact([], price='7.00')
     transaction.transaction_id = '0'
     try:
-        dinero.get_gateway().refund(transaction, transaction.price)
+        dinero.get_gateway('braintree').refund(transaction, transaction.price)
     except PaymentException as e:
         assert InvalidTransactionError in e
     else:

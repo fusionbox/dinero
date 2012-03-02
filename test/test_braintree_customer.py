@@ -1,12 +1,12 @@
 import dinero
 from dinero.exceptions import *
 
-## These tests require that you provide settings for authorize.net and set up
+## These tests require that you provide settings for braintree and set up
 ## your account to reject invalid CVV and AVS responses
-import authorize_net_configuration
+import braintree_configuration
 
 
-## For information on how to trigger specific errors, see http://community.developer.authorize.net/t5/Integration-and-Testing/Triggering-Specific-Transaction-Responses-Using-Test-Account/td-p/4361
+## For information on how to trigger specific errors, see http://www.braintreepayments.com/docs/python/reference/processor_responses
 
 
 def test_create_delete_customer():
@@ -29,11 +29,8 @@ def test_create_delete_customer():
         'year': '2012',
     }
 
-    customer = dinero.Customer.create(gateway_name='authorize.net', **options)
-    try:
-        assert customer.customer_payment_profile_id, 'customer.customer_payment_profile_id is not set'
-    except AttributeError:
-        assert False, 'customer.customer_payment_profile_id is not set'
+    customer = dinero.Customer.create(gateway_name='braintree', **options)
+
     for key, val in options.iteritems():
         try:
             assert val == getattr(customer, key), 'customer.%s != options[%s]' % (key, key)
@@ -44,10 +41,10 @@ def test_create_delete_customer():
 
 def test_retrieve_nonexistant_customer():
     try:
-        customer = dinero.Customer.retrieve(1234567890, gateway_name='authorize.net')
+        customer = dinero.Customer.retrieve(1234567890, gateway_name='braintree')
         if customer:
             customer.delete()
-            customer = dinero.Customer.retrieve(1234567890, gateway_name='authorize.net')
+            customer = dinero.Customer.retrieve(1234567890, gateway_name='braintree')
     except CustomerNotFoundError:
         pass
     else:
@@ -74,8 +71,8 @@ def test_create_retrieve_delete_customer():
         'year': '2012',
     }
 
-    customer = dinero.Customer.create(gateway_name='authorize.net', **options)
-    customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='authorize.net')
+    customer = dinero.Customer.create(gateway_name='braintree', **options)
+    customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
     customer.delete()
 
 
@@ -100,14 +97,13 @@ def test_CRUD_customer():
     }
     new_company = 'Joey Junior, Inc.'
 
-    customer = dinero.Customer.create(gateway_name='authorize.net', **options)
-    customer_id = customer.customer_id
+    customer = dinero.Customer.create(gateway_name='braintree', **options)
 
-    customer = dinero.Customer.retrieve(customer_id, gateway_name='authorize.net')
+    customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
     customer.company = new_company
     customer.save()
 
-    customer = dinero.Customer.retrieve(customer_id, gateway_name='authorize.net')
+    customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
     assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
     customer.delete()
 
@@ -137,14 +133,14 @@ def test_create_customer_with_number_change():
     new_year = '2012'
     new_month = '12'
 
-    customer = dinero.Customer.create(gateway_name='authorize.net', **options)
+    customer = dinero.Customer.create(gateway_name='braintree', **options)
     customer.company = new_company
     customer.number = new_number
     customer.year = new_year
     customer.month = new_month
     customer.save()
 
-    customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='authorize.net')
+    customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
     assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
     assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
     customer.delete()
@@ -170,22 +166,21 @@ def test_CRUD_customer_with_number_change():
         'year': '2012',
     }
     new_company = 'Joey Junior, Inc.'
-    new_number = '4' + '2' * 15
-    new_last_4_test = '2222'
+    new_number = '4005519200000004'
+    new_last_4_test = '0004'
     new_year = '2012'
     new_month = '12'
 
-    customer = dinero.Customer.create(gateway_name='authorize.net', **options)
-    customer_id = customer.customer_id
+    customer = dinero.Customer.create(gateway_name='braintree', **options)
 
-    customer = dinero.Customer.retrieve(customer_id, gateway_name='authorize.net')
+    customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
     customer.company = new_company
     customer.number = new_number
     customer.year = new_year
     customer.month = new_month
     customer.save()
 
-    customer = dinero.Customer.retrieve(customer_id, gateway_name='authorize.net')
+    customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
     assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
     assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
     customer.delete()
@@ -195,11 +190,11 @@ def test_CRUD_customer_with_number_addition():
     options = {
         'email': 'someone@fusionbox.com',
     }
-    number = '4' + '2' * 15
+    number = '4005519200000004'
     year = '2012'
     month = '12'
 
-    customer = dinero.Customer.create(gateway_name='authorize.net', **options)
+    customer = dinero.Customer.create(gateway_name='braintree', **options)
     customer.number = number
     customer.year = year
     customer.month = month
