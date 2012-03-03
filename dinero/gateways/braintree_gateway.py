@@ -290,36 +290,43 @@ class Braintree(Gateway):
     def charge(self, price, options):
         amount, price = _convert_amount(price)
 
-        credit_card = {
-            'number': str(options['number']),
-            'expiration_month': str(options['month']).zfill(2),
-            'expiration_year': str(options['year']),
-        }
-        if options.get('cvv'):
-            credit_card['cvv'] = options['cvv']
-
-        billing = {}
-        billing_fields = {
-            'first_name': 'first_name',
-            'last_name': 'last_name',
-            'street_address': 'address',
-            'locality': 'city',
-            'region': 'state',
-            'postal_code': 'zip',
-            'country_name': 'country',
-        }
-        for braintree_field, field in billing_fields.iteritems():
-            if field in options:
-                billing[braintree_field] = options[field]
-
-        result = braintree.Transaction.sale({
+        submit = {
             'amount': amount,
-            'credit_card': credit_card,
-            'billing': billing,
             'options': {
                 'submit_for_settlement': True,
             },
-        })
+        }
+
+        if 'customer' in options:
+            submit['customer_id'] = options['customer'].customer_id
+            if 'credit_card_token' in options:
+                submit['payment_method_token'] = options['credit_card_token']
+        else:
+            credit_card = {
+                'number': str(options['number']),
+                'expiration_month': str(options['month']).zfill(2),
+                'expiration_year': str(options['year']),
+            }
+            if options.get('cvv'):
+                credit_card['cvv'] = options['cvv']
+
+            billing = {}
+            billing_fields = {
+                'first_name': 'first_name',
+                'last_name': 'last_name',
+                'street_address': 'address',
+                'locality': 'city',
+                'region': 'state',
+                'postal_code': 'zip',
+                'country_name': 'country',
+            }
+            for braintree_field, field in billing_fields.iteritems():
+                if field in options:
+                    billing[braintree_field] = options[field]
+            submit['credit_card'] = credit_card
+            submit['billing'] = billing
+
+        result = braintree.Transaction.sale(submit)
 
         check_for_transaction_errors(result)
         return self._transaction_to_transaction_dict(result.transaction)
@@ -342,7 +349,7 @@ class Braintree(Gateway):
 
     def void(self, transaction):
         try:
-            result = braintree.Transaction.void(transaction.transaction_id, amount)
+            result = braintree.Transaction.void(transaction.transaction_id)
         except NotFoundError as e:
             raise PaymentException([InvalidTransactionError(e)])
 
@@ -478,7 +485,6 @@ class Braintree(Gateway):
         }
 
         for key, kvp in gets.iteritems():
-            orig_key = key
             try:
                 kvp = kvp.replace('[', '.').replace(']', '')
                 search = kvp.split('.')
