@@ -32,6 +32,8 @@ def handle_value(root, key, value):
 
         if isinstance(value, dict):
             dict_to_xml(sub, value)
+        elif isinstance(value, unicode):
+            sub.text = value
         elif value:
             sub.text = str(value)
 
