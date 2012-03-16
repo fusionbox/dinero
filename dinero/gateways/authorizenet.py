@@ -214,6 +214,10 @@ class AuthorizeNet(Gateway):
                         ('cardCode', options.get('cvv')),
                         ])),
                     ])),
+                ('customer', OrderedDict([
+                    ('id', options.get('customer_id')),
+                    ('email', options.get('email')),
+                    ])),
                 ('billTo', OrderedDict([
                     ('firstName', options.get('first_name')),
                     ('lastName', options.get('last_name')),
@@ -221,6 +225,7 @@ class AuthorizeNet(Gateway):
                     ('city', options.get('city')),
                     ('state', options.get('state')),
                     ('zip', options.get('zip')),
+                    ('phoneNumber', options.get('phone')),
                     ]),),
                 ('transactionSettings', OrderedDict([
                     ('setting', [
