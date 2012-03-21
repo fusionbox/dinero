@@ -1,4 +1,60 @@
+import functools
+import logging
+import re
+import time
+
 from dinero import gateways, exceptions
+
+logger = logging.getLogger('dinero.Transaction')
+
+
+def args_kwargs_to_call(args, kwargs):
+    ret = []
+    for arg in args:
+        if ret:
+            ret.append(", ")
+        ret.append(repr(arg))
+    for k, v in kwargs.iteritems():
+        if ret:
+            ret.append(", ")
+        ret.append("%s=%r" % (k, v))
+    return ''.join(ret)
+
+
+def log(fn):
+    """
+    Wraps fn in logging calls
+    """
+    @functools.wraps(fn)
+    def inner(*args, **kwargs):
+        start_time = time.time()
+
+        def logit(exception=None):
+            if exception:
+                exception_message = ' and raised %r' % exception
+            else:
+                exception_message = ''
+
+            end_time = time.time()
+            message = '%s(%s) took %s seconds%s' % (
+                    fn.__name__,
+                    args_kwargs_to_call(args, kwargs),
+                    end_time - start_time,
+                    exception_message)
+            # remove any credit card numbers
+            message = re.sub(r"\b([0-9])[0-9- ]{9,16}([0-9]{4})\b", r'\1XXXXXXXXX\2', message)
+            logger.info(message)
+
+        try:
+            value = fn(*args, **kwargs)
+            logit()
+            return value
+        except Exception as e:
+            logit(e)
+            raise
+
+    return inner
+
 
 def fancy_import(name):
     """
@@ -38,6 +94,7 @@ def get_gateway(gateway_name='default'):
     """
     return _configured_gateways[gateway_name]
 
+
 class Transaction(object):
     """
     A Transaction resource. `Transaction.create` uses the gateway to charge a
@@ -46,12 +103,14 @@ class Transaction(object):
     """
 
     @classmethod
+    @log
     def create(cls, price, gateway_name='default', **kwargs):
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
         return cls(gateway_name=gateway_name, **resp)
 
     @classmethod
+    @log
     def retrieve(cls, transaction_id, gateway_name='default'):
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve(transaction_id)
@@ -63,6 +122,7 @@ class Transaction(object):
         self.transaction_id = transaction_id
         self.data = kwargs
 
+    @log
     def refund(self, amount=None):
         gateway = get_gateway(self.gateway_name)
 
