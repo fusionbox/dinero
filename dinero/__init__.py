@@ -9,6 +9,17 @@ logger = logging.getLogger('dinero.Transaction')
 
 
 def args_kwargs_to_call(args, kwargs):
+    """
+    Turns args (a list) and kwargs (a dict) into a string that looks like it could be used to call a function with positional and keyword arguments.
+
+    >>> args_kwargs_to_call([1], {})
+    '1'
+    >>> args_kwargs_to_call([1,2], {})
+    '1, 2'
+    >>> args_kwargs_to_call([1], {'foo':'bar'})
+    "1, foo='bar'"
+
+    """
     ret = []
     for arg in args:
         if ret:
