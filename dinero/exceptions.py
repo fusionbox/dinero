@@ -48,7 +48,7 @@ class CVVError(VerificationError):
 class AVSError(VerificationError):
     pass
 
-class CardInvalidError(PaymentError):
+class InvalidCardError(PaymentError):
     pass
 
 class InvalidAmountError(PaymentError):
@@ -67,4 +67,19 @@ class RefundError(PaymentError):
     pass
 
 class InvalidTransactionError(PaymentError):
+    pass
+
+##|
+##|  CUSTOMER
+##|
+class CustomerError(DineroException):
+    pass
+
+class InvalidCustomerException(CustomerError):
+    pass
+
+class DuplicateCustomerError(CustomerError):
+    pass
+
+class CustomerNotFoundError(CustomerError):
     pass

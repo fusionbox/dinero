@@ -1,0 +1,145 @@
+0   Response Code
+            Value: The overall status of the transaction
+            Format:
+                1 = Approved
+                2 = Declined
+                3 = Error
+                4 = Held for Review
+1   Response Subcode
+            Value: A code used by the payment gateway for internal transaction tracking
+2   Response Reason Code
+            Value: A code that represents more details about the result of the transaction
+            Format: Numeric
+            Notes: See the "Response Code Details," page 43 section of this document for a listing of response reason codes.
+3   Response Reason Text
+            Value: A brief description of the result, which corresponds with the response reason code
+            Format: Text
+            Notes: You can generally use this text to display a transaction result or error to the customer. However, review the "Response Code Details," page 43 section of this document to identify any specific texts you do not want to pass to the customer.
+4   Authorization Code
+            Value: The authorization or approval code
+            Format: 6 characters
+5   AVS Response Value: The Address Verification Service (AVS) response code
+            Format: A = Address (Street) matches, ZIP does not
+                    B = Address information not provided for AVS check
+                    E = AVS error
+                    G = Non-U.S. Card Issuing Bank
+                    N = No Match on Address (Street) or ZIP
+                    P = AVS not applicable for this transaction
+                    R = Retry—System unavailable or timed out
+                    S = Service not supported by issuer
+                    U = Address information is unavailable
+                    W = Nine digit ZIP matches, Address (Street) does not
+                    X = Address (Street) and nine digit ZIP match
+                    Y = Address (Street) and five digit ZIP match
+                    Z = Five digit ZIP matches, Address (Street) does not
+            Notes: Indicates the result of the AVS filter.
+            For more information about AVS, see the Merchant Integration Guide at http://www.authorize.net/support/merchant/.
+6   Transaction ID Value: The payment gateway-assigned identification number for the transaction
+            Format: When x_test_request is set to a positive response, or when Test Mode is enabled on the payment gateway, this value will be “0.”
+            Notes: This value must be used for any follow on transactions such as a CREDIT, PRIOR_AUTH_CAPTURE or VOID.
+7   Invoice Number Value: The merchant-assigned invoice number for the transaction
+            Format: Up to 20 characters (no symbols)
+8   Description Value: The transaction description
+    Format: Up to 255 characters (no symbols)
+9  Amount Value: The amount of the transaction
+    Format: Up to 15 digits
+10  Method Value: The payment method
+    CC or ECHECK
+11  Transaction Type Value: The type of credit card transaction
+    Format: AUTH_CAPTURE, AUTH_ONLY, CAPTURE_ONLY, CREDIT, PRIOR_AUTH_CAPTUREVOID
+12  Customer ID Value: The merchant-assigned customer ID
+    Format: Up to 20 characters (no symbols)
+13  First Name Value: The first name associated with the customer’s billing address
+    Format: Up to 50 characters (no symbols)
+14  Last Name Value: The last name associated with the customer’s billing address
+    Format: Up to 50 characters (no symbols)
+15  Company Value: The company associated with the customer’s billing address
+    Format: Up to 50 characters (no symbols)
+16  Address Value: The customer’s billing address
+    Format: Up to 60 characters (no symbols)
+17  City Value: The city of the customer’s billing address
+    Format: Up to 40 characters (no symbols)
+18  State Value: The state of the customer’s billing address
+    Format: Up to 40 characters (no symbols) or a valid two-character state code
+19  ZIP Code Value: The ZIP code of the customer’s billing address
+    Format: Up to 20 characters (no symbols)
+20  Country Value: The country of the customer’s billing address
+    Format: Up to 60 characters (no symbols)
+21  Phone Value: The phone number associated with the customer’s billing address
+    Format: Up to 25 digits (no letters). For example, (123)123-1234
+22  Fax Value: The fax number associated with the customer’s billing address
+    Format: Up to 25 digits (no letters). For example, (123)123-1234
+23  Email Address Value: The customer’s valid email address
+    Format: Up to 255 characters
+24  Ship To First Name
+    Value: The first name associated with the customer’s shipping address
+    Format: Up to 50 characters (no symbols)
+25  Ship To Last Name
+    Value: The last name associated with the customer’s shipping address
+    Format: Up to 50 characters (no symbols)
+26  Ship To Company Value: The company associated with the customer’s shipping address
+    Format: Up to 50 characters (no symbols)
+27  Ship To Address Value: The customer’s shipping address
+    Format: Up to 60 characters (no symbols)
+28  Ship To City Value: The city of the customer’s shipping address
+    Format: Up to 40 characters (no symbols)
+29  Ship To State Value: The state of the customer’s shipping address
+    Format: Up to 40 characters (no symbols) or a valid twocharacter state code
+30  Ship To ZIP Code Value: The ZIP code of the customer’s shipping address
+    Format: Up to 20 characters (no symbols)
+31  Ship To Country Value: The country of the customer’s shipping address
+    Format: Up to 60 characters (no symbols)
+32  Tax Value: The tax amount charged
+    Format: Numeric
+    Notes: Delimited tax information is not included in the transaction response.
+33  Duty Value: The duty amount charged
+    Format: Numeric
+    Notes: Delimited duty information is not included in the transaction response.
+34  Freight Value: The freight amount charged
+    Format: Numeric
+    Notes: Delimited freight information is not included in the transaction response.
+35  Tax Exempt Value: The tax exempt status
+    Format: TRUE, FALSE, T, F, YES, NO, Y, N, 1, 0
+36  Purchase Order Number
+    Value: The merchant assigned purchase order number
+    Format: Up to 25 characters (no symbols)
+37  MD5 Hash Value: The payment gateway-generated MD5 hash value that can be used to authenticate the transaction response.
+    Notes: Because transaction responses are returned using an SSL connection, this feature is not necessary for AIM.
+38  Card Code Response
+    Value: The card code verification (CCV) response code
+    Format: M = Match
+            N = No Match
+            P = Not Processed
+            S = Should have been present
+            U = Issuer unable to process request
+    Notes: Indicates the result of the CCV filter.For more information about CCV, see the Merchant Integration Guide at http://www.authorize.net/support/merchant/.
+39  Cardholder Authentication Verification Response
+    Value: The cardholder authentication verification response code
+    Format: Blank or not present  =  CAVV not validated
+            40 = CAVV not validated because erroneous data was submitted
+            41 = CAVV failed validation
+            42 = CAVV passed validation
+            43 = CAVV validation could not be performed; issuer attempt incomplete
+            44 = CAVV validation could not be performed; issuer system error
+            45 = Reserved for future use
+            46 = Reserved for future use
+            47 = CAVV attempt – failed validation – issuer available (U.S.-issued card/non-U.S acquirer)
+            48 = CAVV attempt – passed validation – issuer available (U.S.-issued card/non-U.S. acquirer)
+            49 = CAVV attempt – failed validation – issuer unavailable (U.S.-issued card/non-U.S. acquirer)
+            50 = CAVV attempt – passed validation – issuer unavailable (U.S.-issued card/non-U.S. acquirer)
+            51 = CAVV passed validation, information only, no liability shift
+50  Account Number Value: Last 4 digits of the card provided
+    Format: Alphanumeric (XXXX6835)
+    Notes: This field is returned with all transactions.
+51  Card Type Value: Visa, MasterCard, American Express, Discover, Diners Club, JCB
+    Format: Text
+52  Split Tender ID Value: The value that links the current authorization request to the original authorization request. This value is returned in the reply message from the original authorization request
+    Format: Alphanumeric
+    Notes: This is only returned in the reply message for the first transaction that receives a partial authorization.
+53  Requested Amount
+    Value: Amount requested in the original authorization
+    Format: Numeric
+    Notes: This is present if the current transaction is for a prepaid card or if a splitTenderId was sent in.
+54  Balance On Card Value: Balance on the debit card or prepaid card
+    Format: Numeric
+    Notes: Can be a positive or negative number. This has a value only if the current transaction is for a prepaid card

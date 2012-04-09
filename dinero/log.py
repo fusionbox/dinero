@@ -5,6 +5,7 @@ import time
 
 logger = logging.getLogger('dinero')
 
+
 def args_kwargs_to_call(args, kwargs):
     """
     Turns args (a list) and kwargs (a dict) into a string that looks like it could be used to call a function with positional and keyword arguments.
@@ -62,5 +63,3 @@ def log(fn):
             raise
 
     return inner
-
-

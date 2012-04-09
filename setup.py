@@ -8,13 +8,13 @@ def read(fname):
 
 setup(
         name="dinero",
-        version="0.0.1",
+        version="0.0.2",
         packages=["dinero", "dinero.gateways"],
         author="Fusionbox Programmers",
         author_email="programmers@fusionbox.com",
-        keywords="dinero authorize.net payments",
+        keywords="dinero authorize.net braintree payments",
         description="Gateway-agnostic payment processing.",
-        long_description=read("README.md"),
+        long_description=read("README.rst"),
         url="https://github.com/fusionbox/dinero",
         platforms="any",
         license="BSD",
