@@ -1,4 +1,5 @@
 from dinero import gateways, exceptions
+from dinero.log import log
 
 def fancy_import(name):
     """
@@ -38,6 +39,7 @@ def get_gateway(gateway_name='default'):
     """
     return _configured_gateways[gateway_name]
 
+
 class Transaction(object):
     """
     A Transaction resource. `Transaction.create` uses the gateway to charge a
@@ -46,12 +48,14 @@ class Transaction(object):
     """
 
     @classmethod
+    @log
     def create(cls, price, gateway_name='default', **kwargs):
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
         return cls(gateway_name=gateway_name, **resp)
 
     @classmethod
+    @log
     def retrieve(cls, transaction_id, gateway_name='default'):
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve(transaction_id)
@@ -63,6 +67,7 @@ class Transaction(object):
         self.transaction_id = transaction_id
         self.data = kwargs
 
+    @log
     def refund(self, amount=None):
         gateway = get_gateway(self.gateway_name)
 
