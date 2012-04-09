@@ -272,7 +272,6 @@ def check_for_errors(result):
             flattened_errors.extend(errors)
         if not flattened_errors:
             PaymentException([result.message])
-        print flattened_errors
         raise PaymentException(flattened_errors)
 
 
