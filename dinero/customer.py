@@ -1,5 +1,6 @@
-from dinero import get_gateway, log
+from dinero import get_gateway
 from dinero.exceptions import InvalidCustomerException
+from dinero.log import log
 
 
 class Customer(object):

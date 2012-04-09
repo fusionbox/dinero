@@ -322,8 +322,23 @@ class Braintree(Gateway):
             for braintree_field, field in billing_fields.iteritems():
                 if field in options:
                     billing[braintree_field] = options[field]
+
+            customer = {}
+            customer_fields = {
+                'first_name': 'first_name',
+                'last_name': 'last_name',
+                'email': 'email',
+                'website': 'website',
+                'company': 'company',
+            }
+            for braintree_field, field in customer_fields.iteritems():
+                if field in options:
+                    customer[braintree_field] = options[field]
+
             submit['credit_card'] = credit_card
             submit['billing'] = billing
+            if customer:
+                submit['customer'] = customer
 
         result = braintree.Transaction.sale(submit)
 
@@ -331,6 +346,11 @@ class Braintree(Gateway):
         return self._transaction_to_transaction_dict(result.transaction)
 
     def _transaction_to_transaction_dict(self, transaction):
+        try:
+            print transaction.customer
+        except:
+            pass
+
         ret = {
             'transaction_id': transaction.id,
             'avs_zip_successful': transaction.avs_postal_code_response_code in AVS_ZIP_SUCCESSFUL_RESPONSES,
@@ -343,6 +363,18 @@ class Braintree(Gateway):
             'last_4': transaction.credit_card_details.last_4,
         }
         ret['avs_successful'] = ret['avs_zip_successful'] and ret['avs_address_successful']
+        if transaction.customer:
+            ret.update({
+                'first_name': transaction.customer['first_name'],
+                'last_name': transaction.customer['last_name'],
+                'email': transaction.customer['email'],
+                'website': transaction.customer['website'],
+                'company': transaction.customer['company'],
+                })
+
+        if transaction.custom_fields:
+            for field, value in transaction.custom_fields.iteritems():
+                ret[field] = value
 
         return ret
 

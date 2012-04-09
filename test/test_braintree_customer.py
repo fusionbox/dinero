@@ -128,8 +128,8 @@ def test_create_customer_with_number_change():
         'year': '2012',
     }
     new_company = 'Joey Junior, Inc.'
-    new_number = '4' + '2' * 15
-    new_last_4_test = '2222'
+    new_number = '4500600000000061'  # from <https://www.braintreepayments.com/docs/php/reference/sandbox>
+    new_last_4_test = '0061'
     new_year = '2012'
     new_month = '12'
 

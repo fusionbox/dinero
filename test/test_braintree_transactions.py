@@ -27,11 +27,11 @@ def test_customer_transaction_float():
 def test_customer_transaction_str():
     options = {
         'email': 'someone@fusionbox.com',
-        'number': '4' + '1' * 15,
+        'number': '4500600000000061',
         'month': '12',
         'year': '2012',
     }
-    price = '1.00'
+    price = '1.50'
 
     customer = dinero.Customer.create(gateway_name='braintree', **options)
     transaction = dinero.Transaction.create(price, customer=customer, gateway_name='braintree')

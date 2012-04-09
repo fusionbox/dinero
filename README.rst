@@ -52,8 +52,17 @@ additional optional arguments are
 - city
 - state
 - cvv
+- customer_id
+- email
 
 ``dinero.Transaction.create`` returns a Transaction object.
+
+**Note**: despite the confusion that may arrise, it is possible to associate a
+transaction with a customer (id, email) *without* creating a ``Customer``
+object.  This is so that transactions can be associated with a table in your
+system without incurring the overhead of storing credit cards and customer
+information in your gateway.  In braintree, this is accomplish by storing the
+``customer_id`` in ``custom_fields``.
 
 Transaction objects contain data about the payment.  Every transaction object
 has a ``transaction_id`` and a ``price``.  Additionally, transaction objects

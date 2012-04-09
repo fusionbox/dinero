@@ -14,10 +14,11 @@ def transact(desired_errors, price, number='4' + '1' * 15, month='12', year='203
         transaction = dinero.Transaction.create(price, number=number, month=month, year=year, gateway_name='braintree', **kwargs)
     except PaymentException as e:
         if not desired_errors:
-            assert False, e
+            print repr(e)
+            assert False, e.message
         else:
             for error in desired_errors:
-                assert error in e
+                assert error in e, str(error) + ' not in desired_errors'
     else:
         assert not desired_errors, 'was supposed to throw %s' % str(desired_errors)
         return transaction
@@ -27,10 +28,21 @@ def test_successful():
     transact([], price='2.00')
 
 
+def test_successful_with_customer():
+    transact([], price='2.50', email='joeyjoejoejunior@example.com')
+
+
 def test_successful_retrieve():
     transaction = transact([], price='3.00')
     transaction_retrieved = dinero.Transaction.retrieve(transaction.transaction_id, gateway_name='braintree')
     assert transaction == transaction_retrieved, 'Transactions are not "equal"'
+
+
+def test_successful_retrieve_with_customer():
+    transaction = transact([], price='3.50', email='joeyjoejoejunior@example.com')
+    transaction_retrieved = dinero.Transaction.retrieve(transaction.transaction_id, gateway_name='braintree')
+    assert transaction == transaction_retrieved, 'Transactions are not "equal"'
+    assert transaction_retrieved.email == 'joeyjoejoejunior@example.com', 'Transaction.email is not "joeyjoejoejunior@example.com", it is %s' % repr(transaction_retrieved.email)
 
 
 def test_avs():

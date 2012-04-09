@@ -15,11 +15,14 @@ def transact(desired_errors, price=None, number='4' + '1' * 15, month='12', year
         price = float(random.randint(1, 100000)) / 100
 
     try:
-        transaction = dinero.Transaction.create(price, number=number, month=month, year=year, **kwargs)
+        transaction = dinero.Transaction.create(price, number=number, month=month, year=year, gateway_name='authorize.net', **kwargs)
     except PaymentException as e:
-        for error in desired_errors:
-            assert error in e
-        assert desired_errors
+        if not desired_errors:
+            print repr(e)
+            assert False, e.message
+        else:
+            for error in desired_errors:
+                assert error in e, str(error) + ' not in desired_errors'
     else:
         assert not desired_errors, 'was supposed to throw %s' % str(desired_errors)
         return transaction
@@ -35,8 +38,16 @@ def test_successful_with_customer():
 
 def test_successful_retrieve():
     transaction = transact([])
-    transaction_retrieved = dinero.Transaction.retrieve(transaction.transaction_id)
+    transaction_retrieved = dinero.Transaction.retrieve(transaction.transaction_id, gateway_name='authorize.net')
     assert transaction == transaction_retrieved, 'Transactions are not "equal"'
+
+
+def test_successful_retrieve_with_customer():
+    transaction = transact([], customer_id=123, email='joeyjoejoejunior@example.com')
+    transaction_retrieved = dinero.Transaction.retrieve(transaction.transaction_id, gateway_name='authorize.net')
+    assert transaction == transaction_retrieved, 'Transactions are not "equal"'
+    assert transaction_retrieved.customer_id == 123, 'Transaction.customer_id is not 123, it is %s' % repr(transaction_retrieved.customer_id)
+    assert transaction_retrieved.email == 'joeyjoejoejunior@example.com', 'Transaction.email is not "joeyjoejoejunior@example.com", it is %s' % repr(transaction_retrieved.email)
 
 
 def test_avs():
@@ -85,7 +96,7 @@ def test_duplicate():
 def test_cant_refund_unsettled():
     txn = transact([])
     try:
-        dinero.get_gateway().refund(txn, txn.price)
+        dinero.get_gateway('authorize.net').refund(txn, txn.price)
     except PaymentException as e:
         assert RefundError in e
     else:
@@ -95,7 +106,7 @@ def test_cant_refund_unsettled():
 def test_cant_refund_more():
     txn = transact([])
     try:
-        dinero.get_gateway().refund(txn, txn.price + 1)
+        dinero.get_gateway('authorize.net').refund(txn, txn.price + 1)
     except PaymentException as e:
         assert RefundError in e
     else:
@@ -109,7 +120,7 @@ def test_cant_refund_more():
 #     txn = transact([])
 #     txn.transaction_id = '0'
 #     try:
-#         dinero.get_gateway().refund(txn, txn.price)
+#         dinero.get_gateway('authorize.net').refund(txn, txn.price)
 #     except PaymentException as e:
 #         assert InvalidTransactionError in e
 #     else:

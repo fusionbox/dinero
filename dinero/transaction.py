@@ -1,4 +1,5 @@
-from dinero import exceptions, get_gateway, log
+from dinero import exceptions, get_gateway
+from dinero.log import log
 
 
 class Transaction(object):

@@ -229,6 +229,39 @@ class AuthorizeNet(Gateway):
     ##|
     ##|  XML BUILDERS
     ##|
+    def _transaction_xml(self, price, options):
+        transaction_xml = OrderedDict([
+                ('transactionType', 'authCaptureTransaction'),
+                ('amount', price),
+            ])
+        payment = self._payment_xml(options)
+        if payment:
+            transaction_xml['payment'] = payment
+        billto = self._billto_xml(options)
+        if billto:
+            transaction_xml['billTo'] = billto
+        # customer node causes fail if it is present, but empty.
+        customer_xml = self._simple_customer_xml(options)
+        if customer_xml:
+            transaction_xml['customer'] = customer_xml
+        transaction_xml['transactionSettings'] = OrderedDict([
+                    ('setting', [
+                        OrderedDict([
+                            ('settingName', 'duplicateWindow'),
+                            ('settingValue', 0),
+                            ]),
+                        OrderedDict([
+                            ('settingName', 'testRequest'),
+                            ('settingValue', 'false'),
+                            ]),
+                        ],)
+                    ])
+
+        xml = self.build_xml('createTransactionRequest', OrderedDict([
+            ('transactionRequest', transaction_xml,),
+            ]))
+        return xml
+
     def _payment_xml(self, options):
         year = str(options.get('year', '0'))
         if year != 'XXXX' and int(year) < 100:
@@ -240,16 +273,19 @@ class AuthorizeNet(Gateway):
         if expiry == 'XXXX-XX':
             expiry = 'XXXX'
 
-        return OrderedDict([
+        payment_xml = OrderedDict([
             ('creditCard', OrderedDict([
                 ('cardNumber', prepare_number(options['number'])),
                 ('expirationDate', expiry),
                 ('cardCode', options.get('cvv')),
                 ])),
             ])
+        if any(val != None for val in payment_xml.values()):
+            return payment_xml
+        return None
 
     def _billto_xml(self, options):
-        return OrderedDict([
+        billto_xml = OrderedDict([
             ('firstName', options.get('first_name')),
             ('lastName', options.get('last_name')),
             ('company', options.get('company')),
@@ -261,6 +297,17 @@ class AuthorizeNet(Gateway):
             ('phoneNumber', options.get('phone')),
             ('faxNumber', options.get('fax')),
             ])
+        if any(val != None for val in billto_xml.values()):
+            return billto_xml
+        return None
+
+    def _simple_customer_xml(self, options):
+        if not ('customer_id' in options or 'email' in options):
+            return None
+        return OrderedDict([
+                ('id', options.get('customer_id')),
+                ('email', options.get('email')),
+                ])
 
     def _create_customer_xml(self, options):
         # include <billTo> and <payment> fields only if
@@ -337,6 +384,7 @@ class AuthorizeNet(Gateway):
                 'avs_zip_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ZIP_SUCCESSFUL_RESPONSES,
                 'avs_address_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
                 'auth_code': resp.get('authCode'),
+                'auth_code': resp.get('authCode'),
                 }
 
         try:
@@ -345,6 +393,16 @@ class AuthorizeNet(Gateway):
         except KeyError:
             ret['account_number'] = resp['payment']['creditCard']['cardNumber']
             ret['card_type'] = resp['payment']['creditCard']['cardType']
+
+        try:
+            customer = resp['customer']
+            if customer:
+                ret['customer_id'] = customer.get('id')
+                if ret['customer_id'] and re.match('^[0-9]+$', ret['customer_id']):
+                    ret['customer_id'] = int(ret['customer_id'])
+                ret['email'] = customer.get('email')
+        except KeyError:
+            pass
 
         ret['last_4'] = ret['account_number'][-4:]
 
@@ -379,30 +437,7 @@ class AuthorizeNet(Gateway):
         if 'customer' in options:
             return self.charge_customer(options['customer'], price, options)
 
-        xml = self.build_xml('createTransactionRequest', OrderedDict([
-            ('transactionRequest', OrderedDict([
-                ('transactionType', 'authCaptureTransaction'),
-                ('amount', price),
-                ('payment', self._payment_xml(options)),
-                ('billTo', self._billto_xml(options)),
-                ('customer', OrderedDict([
-                    ('id', options.get('customer_id')),
-                    ('email', options.get('email')),
-                    ])),
-                ('transactionSettings', OrderedDict([
-                    ('setting', [
-                        OrderedDict([
-                            ('settingName', 'duplicateWindow'),
-                            ('settingValue', 0),
-                            ]),
-                        OrderedDict([
-                            ('settingName', 'testRequest'),
-                            ('settingValue', 'false'),
-                            ]),
-                        ],)
-                    ])),
-                ]),),
-            ]))
+        xml = self._transaction_xml(price, options)
 
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
