@@ -29,6 +29,10 @@ def test_successful():
     transact([])
 
 
+def test_successful_with_customer():
+    transact([], customer_id=123, email='joeyjoejoejunior@example.com')
+
+
 def test_successful_retrieve():
     transaction = transact([])
     transaction_retrieved = dinero.Transaction.retrieve(transaction.transaction_id)

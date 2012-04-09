@@ -1,4 +1,4 @@
-from dinero import exceptions, get_gateway
+from dinero import exceptions, get_gateway, log
 
 
 class Transaction(object):
@@ -9,12 +9,14 @@ class Transaction(object):
     """
 
     @classmethod
+    @log
     def create(cls, price, gateway_name=None, **kwargs):
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
         return cls(gateway_name=gateway.name, **resp)
 
     @classmethod
+    @log
     def retrieve(cls, transaction_id, gateway_name=None):
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve(transaction_id)
@@ -26,6 +28,7 @@ class Transaction(object):
         self.transaction_id = transaction_id
         self.data = kwargs
 
+    @log
     def refund(self, amount=None):
         gateway = get_gateway(self.gateway_name)
 

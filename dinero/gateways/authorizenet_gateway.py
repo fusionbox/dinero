@@ -83,6 +83,8 @@ def handle_value(root, key, value):
 
         if isinstance(value, dict):
             _dict_to_xml(sub, value)
+        elif isinstance(value, unicode):
+            sub.text = value
         elif value:
             sub.text = str(value)
 
@@ -383,6 +385,10 @@ class AuthorizeNet(Gateway):
                 ('amount', price),
                 ('payment', self._payment_xml(options)),
                 ('billTo', self._billto_xml(options)),
+                ('customer', OrderedDict([
+                    ('id', options.get('customer_id')),
+                    ('email', options.get('email')),
+                    ])),
                 ('transactionSettings', OrderedDict([
                     ('setting', [
                         OrderedDict([

@@ -1,4 +1,4 @@
-from dinero import get_gateway
+from dinero import get_gateway, log
 from dinero.exceptions import InvalidCustomerException
 
 
@@ -10,12 +10,14 @@ class Customer(object):
     """
 
     @classmethod
+    @log
     def create(cls, gateway_name=None, **kwargs):
         gateway = get_gateway(gateway_name)
         resp = gateway.create_customer(kwargs)
         return cls(gateway_name=gateway.name, **resp)
 
     @classmethod
+    @log
     def retrieve(cls, customer_id, gateway_name=None):
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve_customer(customer_id)
@@ -27,6 +29,7 @@ class Customer(object):
         self.customer_id = customer_id
         self.data = kwargs
 
+    @log
     def save(self):
         if not self.customer_id:
             raise InvalidCustomerException("Cannot save a customer that doesn't have a customer_id")
@@ -34,6 +37,7 @@ class Customer(object):
         gateway.update_customer(self.customer_id, self.data)
         return True
 
+    @log
     def delete(self):
         if not self.customer_id:
             raise InvalidCustomerException("Cannot delete a customer that doesn't have a customer_id")
