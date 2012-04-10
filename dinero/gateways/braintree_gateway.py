@@ -545,6 +545,10 @@ class Braintree(Gateway):
             except KeyError:
                 pass
 
+        if 'last_4' in ret:
+            ret['number'] = 'X' * 12 + ret['last_4']
+            # now it's in the form "XXXXXXXXXXXX1234"
+
         return ret
 
     def _create_all_from_dict(self, options):

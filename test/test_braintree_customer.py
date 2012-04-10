@@ -104,8 +104,8 @@ def test_CRUD_customer():
     customer.save()
 
     customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
-    assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
     customer.delete()
+    assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
 
 
 def test_create_customer_with_number_change():
@@ -129,7 +129,7 @@ def test_create_customer_with_number_change():
     }
     new_company = 'Joey Junior, Inc.'
     new_number = '4500600000000061'  # from <https://www.braintreepayments.com/docs/php/reference/sandbox>
-    new_last_4_test = '0061'
+    new_last_4 = '0061'
     new_year = '2012'
     new_month = '12'
 
@@ -141,9 +141,9 @@ def test_create_customer_with_number_change():
     customer.save()
 
     customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
-    assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
-    assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
     customer.delete()
+    assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
+    assert customer.last_4 == new_last_4, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4)
 
 
 def test_CRUD_customer_with_number_change():
@@ -167,9 +167,9 @@ def test_CRUD_customer_with_number_change():
     }
     new_company = 'Joey Junior, Inc.'
     new_number = '4005519200000004'
-    new_last_4_test = '0004'
-    new_year = '2012'
-    new_month = '12'
+    new_last_4 = '0004'
+    new_year = '2013'
+    new_month = '11'
 
     customer = dinero.Customer.create(gateway_name='braintree', **options)
 
@@ -181,9 +181,11 @@ def test_CRUD_customer_with_number_change():
     customer.save()
 
     customer = dinero.Customer.retrieve(customer.customer_id, gateway_name='braintree')
-    assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
-    assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
     customer.delete()
+    assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
+    assert customer.last_4 == new_last_4, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4)
+    assert customer.year == new_year, 'Customer new_year is "%s" not "%s"' % (customer.year, new_year)
+    assert customer.month == new_month, 'Customer new_month is "%s" not "%s"' % (customer.month, new_month)
 
 
 def test_CRUD_customer_with_number_addition():

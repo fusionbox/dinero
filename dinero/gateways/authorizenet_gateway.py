@@ -721,8 +721,8 @@ class AuthorizeNet(Gateway):
             'last_4': 'paymentProfiles.payment.creditCard.cardNumber',
 
             # auth.net specific
-            'number': 'paymentProfile.payment.creditCard.cardNumber',
-            'expiration_date': 'paymentProfile.payment.creditCard.expirationDate',
+            'number': 'paymentProfiles.payment.creditCard.cardNumber',
+            'expiration_date': 'paymentProfiles.payment.creditCard.expirationDate',
             'customer_payment_profile_id': 'paymentProfiles.customerPaymentProfileId',
             }
         for key, kvp in gets.iteritems():
