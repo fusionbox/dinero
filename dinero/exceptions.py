@@ -69,17 +69,26 @@ class RefundError(PaymentError):
 class InvalidTransactionError(PaymentError):
     pass
 
+
 ##|
 ##|  CUSTOMER
 ##|
 class CustomerError(DineroException):
     pass
 
+
 class InvalidCustomerException(CustomerError):
     pass
 
+
 class DuplicateCustomerError(CustomerError):
-    pass
+    def __init__(self, *args, **kwargs):
+        if 'customer_id' in kwargs:
+            self.customer_id = kwargs.pop('customer_id')
+        else:
+            self.customer_id = None
+        super(DuplicateCustomerError, self).__init__(*args, **kwargs)
+
 
 class CustomerNotFoundError(CustomerError):
     pass

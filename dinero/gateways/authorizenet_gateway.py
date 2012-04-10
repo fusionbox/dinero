@@ -497,7 +497,12 @@ class AuthorizeNet(Gateway):
         except GatewayException as e:
             error_code = e.args[0][0][0]
             if error_code == 'E00039':  # Duplicate Record
-                raise DuplicateCustomerError(e)
+                e.customer_id = None
+
+                customer_match = re.search(r'^A duplicate record with ID (.*) already exists.$', e.message[0][1])
+                if customer_match:
+                    e.customer_id = customer_match.group(1)
+                raise DuplicateCustomerError(e, customer_id=e.customer_id)
             elif error_code == 'E00013':  # Expiration Date is invalid
                 raise InvalidCardError(e)
             raise
