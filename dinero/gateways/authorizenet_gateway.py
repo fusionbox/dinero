@@ -611,7 +611,7 @@ class AuthorizeNet(Gateway):
         except GatewayException as e:
             error_code = e.args[0][0][0]
             if error_code == 'E00040':  # NotFound
-                raise DuplicateCustomerError(e)
+                raise CustomerNotFoundError(e)
             raise
         else:
             self._update_customer_payment(customer_id, options)
