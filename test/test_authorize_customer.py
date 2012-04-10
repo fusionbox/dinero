@@ -189,22 +189,6 @@ def test_CRUD_customer_with_number_change():
     customer.save()
 
     customer = dinero.Customer.retrieve(customer_id, gateway_name='authorize.net')
+    customer.delete()
     assert customer.company == new_company, 'Customer new_company is "%s" not "%s"' % (customer.company, new_company)
     assert customer.last_4 == new_last_4_test, 'Customer new_last_4 is "%s" not "%s"' % (customer.last_4, new_last_4_test)
-    customer.delete()
-
-
-def test_CRUD_customer_with_number_addition():
-    options = {
-        'email': 'someone@fusionbox.com',
-    }
-    number = '4' + '2' * 15
-    year = '2012'
-    month = '12'
-
-    customer = dinero.Customer.create(gateway_name='authorize.net', **options)
-    customer.number = number
-    customer.year = year
-    customer.month = month
-    customer.save()
-    customer.delete()
