@@ -473,11 +473,6 @@ class Braintree(Gateway):
         return True
 
     def update_customer(self, customer_id, options):
-        update_options = options
-        if 'number' in update_options:
-            update_options = {}
-            update_options.update(options)
-            del update_options['number']
         customer, address, credit_card = self._create_all_from_dict(options)
 
         credit_card_token = None
