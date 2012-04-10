@@ -30,6 +30,10 @@ class Customer(object):
         self.customer_id = customer_id
         self.data = kwargs
 
+    def update(self, options):
+        for key, value in options.iteritems():
+            setattr(self, key, value)
+
     @log
     def save(self):
         if not self.customer_id:
