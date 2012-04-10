@@ -722,6 +722,7 @@ class AuthorizeNet(Gateway):
 
             # auth.net specific
             'number': 'paymentProfile.payment.creditCard.cardNumber',
+            'expiration_date': 'paymentProfile.payment.creditCard.expirationDate',
             'customer_payment_profile_id': 'paymentProfiles.customerPaymentProfileId',
             }
         for key, kvp in gets.iteritems():
@@ -733,6 +734,13 @@ class AuthorizeNet(Gateway):
                 ret[key] = val
             except KeyError:
                 pass
+
+        if 'expiration_date' in ret:
+            # in the form "XXXX" or "YYYY-MM"
+            if '-' in ret['expiration_date']:
+                ret['year'], ret['month'] = ret['expiration_date'].split('-', 1)
+            else:
+                ret['year'], ret['month'] = ('XXXX', 'XX')
 
         if 'last_4' in ret:
             # in the form "XXXX1234"
