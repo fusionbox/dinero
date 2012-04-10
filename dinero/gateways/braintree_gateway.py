@@ -1,6 +1,9 @@
 import re
 import braintree
-from braintree.exceptions import NotFoundError
+from braintree.exceptions import (
+    NotFoundError,
+    AuthenticationError as BraintreeAuthenticationError,
+    )
 
 from dinero.exceptions import *
 from dinero.gateways.base import Gateway
@@ -286,6 +289,22 @@ class Braintree(Gateway):
                 options['private_key'],
                 )
 
+        # Auto-discover if this is a real account or a developer account.  Tries
+        # to access both end points and see which one works.
+        try:
+            self.retrieve('0')
+        except BraintreeAuthenticationError:
+            environment = braintree.Environment.Production  # TODO: autodetect live vs. test
+
+            braintree.Configuration.configure(
+                    environment,
+                    options['merchant_id'],
+                    options['public_key'],
+                    options['private_key'],
+                    )
+        except PaymentException:
+            pass
+
     def charge(self, price, options):
         amount, price = _convert_amount(price)
 
@@ -544,7 +563,7 @@ class Braintree(Gateway):
             'last_name': 'last_name',
             'company': 'company',
             'phone': 'phone',
-            'fax': 'fax'
+            'fax': 'fax',
         }
         for field, braintree_field in customer_fields.iteritems():
             if field in options:
@@ -558,16 +577,17 @@ class Braintree(Gateway):
             'state': 'locality',
             'city': 'region',
             'zip': 'postal_code',
-            'country': 'country_name'
+            'country': 'country_name',
         }
         for field, braintree_field in address_fields.iteritems():
             if field in options:
                 address[braintree_field] = options[field]
 
         credit_card_fields = {
+            # 'merchant_account_id': self.gateway_options['merchant_id'],
             'number': 'number',
             'month': 'expiration_month',
-            'year': 'expiration_year'
+            'year': 'expiration_year',
         }
         for field, braintree_field in credit_card_fields.iteritems():
             if field in options:
