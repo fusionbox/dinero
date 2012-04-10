@@ -1,17 +1,14 @@
 
 
-def fancy_import(name):
+def fancy_import(import_name):
     """
     This takes a fully qualified object name, like
     'dinero.gateways.AuthorizeNet', and turns it into the
     dinero.gateways.AuthorizeNet object.
     """
-
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
+    import_path, import_me = import_name.rsplit('.', 1)
+    imported = __import__(import_path, globals(), locals(), [import_me], -1)
+    return getattr(imported, import_me)
 
 
 _configured_gateways = {}
