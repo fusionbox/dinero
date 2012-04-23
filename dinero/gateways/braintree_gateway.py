@@ -365,11 +365,6 @@ class Braintree(Gateway):
         return self._transaction_to_transaction_dict(result.transaction)
 
     def _transaction_to_transaction_dict(self, transaction):
-        try:
-            print transaction.customer
-        except:
-            pass
-
         ret = {
             'transaction_id': transaction.id,
             'avs_zip_successful': transaction.avs_postal_code_response_code in AVS_ZIP_SUCCESSFUL_RESPONSES,
