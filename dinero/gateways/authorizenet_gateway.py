@@ -237,13 +237,13 @@ class AuthorizeNet(Gateway):
         payment = self._payment_xml(options)
         if payment:
             transaction_xml['payment'] = payment
-        billto = self._billto_xml(options)
-        if billto:
-            transaction_xml['billTo'] = billto
         # customer node causes fail if it is present, but empty.
         customer_xml = self._simple_customer_xml(options)
         if customer_xml:
             transaction_xml['customer'] = customer_xml
+        billto = self._billto_xml(options)
+        if billto:
+            transaction_xml['billTo'] = billto
         transaction_xml['transactionSettings'] = OrderedDict([
                     ('setting', [
                         OrderedDict([
