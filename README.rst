@@ -57,7 +57,7 @@ additional optional arguments are
 
 ``dinero.Transaction.create`` returns a Transaction object.
 
-**Note**: despite the confusion that may arrise, it is possible to associate a
+**Note**: despite the confusion that may arise, it is possible to associate a
 transaction with a customer (id, email) *without* creating a ``Customer``
 object.  This is so that transactions can be associated with a table in your
 system without incurring the overhead of storing credit cards and customer
