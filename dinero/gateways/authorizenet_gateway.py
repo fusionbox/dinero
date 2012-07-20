@@ -262,7 +262,24 @@ class AuthorizeNet(Gateway):
             ]))
         return xml
 
+    def _payment_check_xml(self, options):
+        return OrderedDict([
+            ('bankAccount', OrderedDict([
+                ('accountType', options['account_type']),
+                ('routingNumber', options['routing_number']),
+                ('accountNumber', options['account_number']),
+                ('nameOnAccount', options['name']),
+                # don't know what this default should be
+                ('echeckType', options.get('check_type', 'PPD')),
+                ('bankName', options.get('bank_name')),
+                ])
+                ),
+            ])
+
     def _payment_xml(self, options):
+        if 'check' in options:
+            return self._payment_check_xml(options['check'])
+
         year = str(options.get('year', '0'))
         if year != 'XXXX' and int(year) < 100:
             century = date.today().year // 100
