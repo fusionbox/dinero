@@ -182,10 +182,28 @@ class AuthorizeNet(Gateway):
         self.login_id = options['login_id']
         self.transaction_key = options['transaction_key']
 
-        self.url = self.test_url
 
-        # Auto-discover if this is a real account or a developer account.  Tries
-        # to access both end points and see which one works.
+        cache = options.get('cache')
+        if cache:
+            cache_key = 'dinero.gateways.AuthorizeNet:%s:%s' % (self.login_id, self.transaction_key)
+            url = cache.get(cache_key)
+            if url is not None:
+                self.url = url
+            else:
+                self._discover_url()
+                cache.set(cache_key, self.url)
+        else:
+            self._discover_url()
+
+    def _discover_url(self):
+        """
+        Auto-discover if this is a real account or a developer account.  Tries
+        to access both end points and see which one works.
+
+        Returns nothing, but sets `self.url`
+        """
+
+        self.url = self.test_url
         try:
             self.retrieve('0')
         except GatewayException as e:
