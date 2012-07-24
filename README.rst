@@ -98,6 +98,8 @@ transaction. Later, the transaction can be ``settle()`` ed::
     # Up to 30 days later...
     transaction.settle()
 
+TODO: braintree support
+
 
 
 Customer Objects
