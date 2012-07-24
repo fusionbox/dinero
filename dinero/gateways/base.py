@@ -23,3 +23,6 @@ class Gateway(object):
 
     def delete_customer(self, customer_id):
         raise NotImplementedError
+
+    def settle(self, transaction, amount):
+        raise NotImplementedError
