@@ -230,8 +230,13 @@ class AuthorizeNet(Gateway):
     ##|  XML BUILDERS
     ##|
     def _transaction_xml(self, price, options):
+        if options.get('settle', True):
+            txn_type = 'authCaptureTransaction'
+        else:
+            txn_type = 'authOnlyTransaction'
+
         transaction_xml = OrderedDict([
-                ('transactionType', 'authCaptureTransaction'),
+                ('transactionType', txn_type),
                 ('amount', price),
             ])
         payment = self._payment_xml(options)
@@ -364,9 +369,14 @@ class AuthorizeNet(Gateway):
         return self.build_xml('updateCustomerProfileRequest', root)
 
     def _charge_customer_xml(self, customer_id, customer_payment_profile_id, price, options):
+        if options.get('settle', True):
+            txn_type = 'profileTransAuthCapture'
+        else:
+            txn_type = 'profileTransAuthOnly'
+
         return self.build_xml('createCustomerProfileTransactionRequest', OrderedDict([
                 ('transaction', OrderedDict([
-                    ('profileTransAuthOnly', OrderedDict([
+                    (txn_type, OrderedDict([
                         ('amount', price),
                         ('customerProfileId', customer_id),
                         ('customerPaymentProfileId', customer_payment_profile_id),
@@ -384,7 +394,7 @@ class AuthorizeNet(Gateway):
                 'avs_zip_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ZIP_SUCCESSFUL_RESPONSES,
                 'avs_address_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
                 'auth_code': resp.get('authCode'),
-                'auth_code': resp.get('authCode'),
+                'status': resp.get('transactionStatus'),
                 }
 
         try:
@@ -813,3 +823,16 @@ class AuthorizeNet(Gateway):
             pass
 
         return ret
+
+    def settle(self, transaction, amount):
+        xml = self.build_xml('createTransactionRequest', OrderedDict([
+            ('transactionRequest', OrderedDict([
+                ('transactionType', 'priorAuthCaptureTransaction'),
+                ('amount', amount),
+                ('refTransId', transaction.transaction_id),
+                ])),
+            ]))
+
+        resp = xml_to_dict(xml_post(self.url, xml))
+        transaction.auth_code = resp['transactionResponse']['authCode']
+        return transaction

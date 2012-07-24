@@ -84,6 +84,24 @@ Transaction objects::
 
     transaction.refund()
 
+Delayed settlement
+^^^^^^^^^^^^^^^^^^
+
+A transaction can be submitted with ``settle=False`` for an authorization-only
+transaction. Later, the transaction can be ``settle()`` ed::
+
+    transaction = dinero.Transaction.create(
+        ...
+        settle=False
+        )
+
+    # Up to 30 days later...
+    transaction.settle()
+
+TODO: braintree support
+
+
+
 Customer Objects
 ~~~~~~~~~~~~~~~~
 

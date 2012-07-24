@@ -42,6 +42,11 @@ class Transaction(object):
                 raise exceptions.PaymentException("You cannot refund a "
                         "transaction that hasn't been settled unless you "
                         "refund it for the full amount.")
+    @log
+    def settle(self, amount=None):
+        gateway = get_gateway(self.gateway_name)
+        return gateway.settle(self, amount or self.price)
+
 
     def to_dict(self):
         return vars(self)
