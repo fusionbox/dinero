@@ -1,6 +1,7 @@
 from dinero import get_gateway
 from dinero.exceptions import InvalidCustomerException
 from dinero.log import log
+from dinero.card import CreditCard
 
 
 class Customer(object):
@@ -50,6 +51,14 @@ class Customer(object):
         gateway.delete_customer(self.customer_id)
         self.customer_id = None
         return True
+
+    @log
+    def add_card(self, options, gateway_name=None):
+        if not self.customer_id:
+            raise InvalidCustomerException("Cannot add a card to a customer that doesn't have a customer_id")
+        gateway = get_gateway(gateway_name)
+        resp = gateway.add_card_to_customer(self, options)
+        return CreditCard(customer=self, **resp)
 
     def to_dict(self):
         return vars(self)
