@@ -447,6 +447,8 @@ class AuthorizeNet(Gateway):
     def charge(self, price, options):
         if 'customer' in options:
             return self.charge_customer(options['customer'], price, options)
+        if 'cc' in options:
+            return self.charge_card(options['cc'], price, options)
 
         xml = self._transaction_xml(price, options)
 
@@ -667,12 +669,16 @@ class AuthorizeNet(Gateway):
 
     def charge_customer(self, customer, price, options):
         customer_id = customer.customer_id
+
         try:
             customer_payment_profile_id = customer.customer_payment_profile_id
         except AttributeError:
             customer = self.retrieve_customer(customer_id)
             customer_payment_profile_id = customer.customer_payment_profile_id
 
+        return self._charge_customer(customer_id, customer_payment_profile_id, price, options)
+
+    def _charge_customer(self, customer_id, customer_payment_profile_id, price, options):
         xml = self._charge_customer_xml(customer_id, customer_payment_profile_id, price, options)
         resp = xml_to_dict(xml_post(self.url, xml))
         try:
@@ -684,6 +690,9 @@ class AuthorizeNet(Gateway):
             raise
 
         return self._resp_to_transaction_dict_direct_response(resp['directResponse'], price)
+
+    def charge_card(self, card, price, options):
+        return self._charge_customer(card.customer_id, card.payment_profile_id, price, options)
 
     def _get_customer_payment_profile(self, customer_id, customer_payment_profile_id):
         xml = self.build_xml('getCustomerPaymentProfileRequest', OrderedDict([
