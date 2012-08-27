@@ -781,6 +781,7 @@ class AuthorizeNet(Gateway):
             ret['cards'].append(CreditCard(
                 customer_id=ret['customer_id'],
                 payment_profile_id=profile_dict['customerPaymentProfileId'],
+                account_number=profile_dict['payment']['creditCard']['cardNumber'],
             ))
 
         return ret
