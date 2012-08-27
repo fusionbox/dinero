@@ -58,7 +58,9 @@ class Customer(object):
             raise InvalidCustomerException("Cannot add a card to a customer that doesn't have a customer_id")
         gateway = get_gateway(gateway_name)
         resp = gateway.add_card_to_customer(self, options)
-        return CreditCard(customer=self, **resp)
+        card = CreditCard(gateway_name=self.gateway_name, **resp)
+        self.cards.append(card)
+        return card
 
     def to_dict(self):
         return vars(self)
