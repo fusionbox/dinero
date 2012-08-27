@@ -857,3 +857,12 @@ class AuthorizeNet(Gateway):
         resp = xml_to_dict(xml_post(self.url, xml))
         transaction.auth_code = resp['transactionResponse']['authCode']
         return transaction
+
+    def delete_card(self, card):
+        xml = self.build_xml('deleteCustomerPaymentProfileRequest', OrderedDict([
+            ('customerProfileId', card.customer_id),
+            ('customerPaymentProfileId', card.payment_profile_id),
+            ]))
+
+        resp = xml_to_dict(xml_post(self.url, xml))
+        self.check_for_error(resp)
