@@ -147,6 +147,7 @@ def get_first_of(dict, possibilities, default=None):
 
 
 RESPONSE_CODE_EXCEPTION_MAP = {
+        '9':  [RoutingNumberError],
         '8':  [ExpiryError],
         '6':  [InvalidCardError],
         '37': [InvalidCardError],
@@ -270,7 +271,7 @@ class AuthorizeNet(Gateway):
                 ('accountNumber', options['account_number']),
                 ('nameOnAccount', options['name']),
                 # don't know what this default should be
-                ('echeckType', options.get('check_type', 'PPD')),
+                ('echeckType', options.get('check_type', 'WEB')),
                 ('bankName', options.get('bank_name')),
                 ])
                 ),
