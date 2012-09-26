@@ -52,6 +52,8 @@ class Transaction(object):
         return vars(self)
 
     def __getattr__(self, attr):
+        if attr == '__setstate__':
+            raise AttributeError
         try:
             return self.data[attr]
         except KeyError as e:

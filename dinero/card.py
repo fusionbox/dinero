@@ -22,6 +22,8 @@ class CreditCard(object):
         return vars(self)
 
     def __getattr__(self, attr):
+        if attr == '__setstate__':
+            raise AttributeError
         try:
             return self.data[attr]
         except KeyError as e:
@@ -32,6 +34,7 @@ class CreditCard(object):
             self.__dict__[attr] = val
         else:
             self.data[attr] = val
+
 
     @classmethod
     def from_dict(cls, dict):
