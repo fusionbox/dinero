@@ -1,8 +1,9 @@
 from dinero import exceptions, get_gateway
 from dinero.log import log
+from dinero.base import DineroObject
 
 
-class Transaction(object):
+class Transaction(DineroObject):
     """
     A Transaction resource. `Transaction.create` uses the gateway to charge a
     card, and returns an object for future manipulations of the transaction,
@@ -46,18 +47,6 @@ class Transaction(object):
     def settle(self, amount=None):
         gateway = get_gateway(self.gateway_name)
         return gateway.settle(self, amount or self.price)
-
-
-    def to_dict(self):
-        return vars(self)
-
-    def __getattr__(self, attr):
-        if attr == '__setstate__':
-            raise AttributeError
-        try:
-            return self.data[attr]
-        except KeyError as e:
-            raise AttributeError(e)
 
     def __setattr__(self, attr, val):
         if attr in ['gateway_name', 'transaction_id', 'price', 'data']:
