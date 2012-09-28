@@ -6,6 +6,7 @@ from lxml import etree
 from dinero.ordereddict import OrderedDict
 from dinero.exceptions import *
 from dinero.gateways.base import Gateway
+from dinero.card import CreditCard
 
 from datetime import date
 
@@ -230,8 +231,13 @@ class AuthorizeNet(Gateway):
     ##|  XML BUILDERS
     ##|
     def _transaction_xml(self, price, options):
+        if options.get('settle', True):
+            txn_type = 'authCaptureTransaction'
+        else:
+            txn_type = 'authOnlyTransaction'
+
         transaction_xml = OrderedDict([
-                ('transactionType', 'authCaptureTransaction'),
+                ('transactionType', txn_type),
                 ('amount', price),
             ])
         payment = self._payment_xml(options)
@@ -364,9 +370,14 @@ class AuthorizeNet(Gateway):
         return self.build_xml('updateCustomerProfileRequest', root)
 
     def _charge_customer_xml(self, customer_id, customer_payment_profile_id, price, options):
+        if options.get('settle', True):
+            txn_type = 'profileTransAuthCapture'
+        else:
+            txn_type = 'profileTransAuthOnly'
+
         return self.build_xml('createCustomerProfileTransactionRequest', OrderedDict([
                 ('transaction', OrderedDict([
-                    ('profileTransAuthOnly', OrderedDict([
+                    (txn_type, OrderedDict([
                         ('amount', price),
                         ('customerProfileId', customer_id),
                         ('customerPaymentProfileId', customer_payment_profile_id),
@@ -384,7 +395,7 @@ class AuthorizeNet(Gateway):
                 'avs_zip_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ZIP_SUCCESSFUL_RESPONSES,
                 'avs_address_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
                 'auth_code': resp.get('authCode'),
-                'auth_code': resp.get('authCode'),
+                'status': resp.get('transactionStatus'),
                 }
 
         try:
@@ -436,6 +447,8 @@ class AuthorizeNet(Gateway):
     def charge(self, price, options):
         if 'customer' in options:
             return self.charge_customer(options['customer'], price, options)
+        if 'cc' in options:
+            return self.charge_card(options['cc'], price, options)
 
         xml = self._transaction_xml(price, options)
 
@@ -656,12 +669,16 @@ class AuthorizeNet(Gateway):
 
     def charge_customer(self, customer, price, options):
         customer_id = customer.customer_id
+
         try:
             customer_payment_profile_id = customer.customer_payment_profile_id
         except AttributeError:
             customer = self.retrieve_customer(customer_id)
             customer_payment_profile_id = customer.customer_payment_profile_id
 
+        return self._charge_customer(customer_id, customer_payment_profile_id, price, options)
+
+    def _charge_customer(self, customer_id, customer_payment_profile_id, price, options):
         xml = self._charge_customer_xml(customer_id, customer_payment_profile_id, price, options)
         resp = xml_to_dict(xml_post(self.url, xml))
         try:
@@ -673,6 +690,9 @@ class AuthorizeNet(Gateway):
             raise
 
         return self._resp_to_transaction_dict_direct_response(resp['directResponse'], price)
+
+    def charge_card(self, card, price, options):
+        return self._charge_customer(card.customer_id, card.payment_profile_id, price, options)
 
     def _get_customer_payment_profile(self, customer_id, customer_payment_profile_id):
         xml = self.build_xml('getCustomerPaymentProfileRequest', OrderedDict([
@@ -753,6 +773,17 @@ class AuthorizeNet(Gateway):
         except KeyError:
             pass
 
+        ret['cards'] = []
+        profile_list = resp['paymentProfiles']
+        if isinstance(profile_list, dict):
+            profile_list = [profile_list]
+        for profile_dict in profile_list:
+            ret['cards'].append(CreditCard(
+                customer_id=ret['customer_id'],
+                payment_profile_id=profile_dict['customerPaymentProfileId'],
+                account_number=profile_dict['payment']['creditCard']['cardNumber'],
+            ))
+
         return ret
 
     def _dict_to_payment_profile(self, resp):
@@ -813,3 +844,16 @@ class AuthorizeNet(Gateway):
             pass
 
         return ret
+
+    def settle(self, transaction, amount):
+        xml = self.build_xml('createTransactionRequest', OrderedDict([
+            ('transactionRequest', OrderedDict([
+                ('transactionType', 'priorAuthCaptureTransaction'),
+                ('amount', amount),
+                ('refTransId', transaction.transaction_id),
+                ])),
+            ]))
+
+        resp = xml_to_dict(xml_post(self.url, xml))
+        transaction.auth_code = resp['transactionResponse']['authCode']
+        return transaction

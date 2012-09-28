@@ -1,9 +1,11 @@
 from dinero import get_gateway
 from dinero.exceptions import InvalidCustomerException
 from dinero.log import log
+from dinero.card import CreditCard
+from dinero.base import DineroObject
 
 
-class Customer(object):
+class Customer(DineroObject):
     """
     A Customer resource. `Customer.create` uses the gateway to create a
     customer.  You can use this Customer object in calls to
@@ -51,14 +53,13 @@ class Customer(object):
         self.customer_id = None
         return True
 
-    def to_dict(self):
-        return vars(self)
-
-    def __getattr__(self, attr):
-        try:
-            return self.data[attr]
-        except KeyError as e:
-            raise AttributeError(e)
+    @log
+    def add_card(self, options, gateway_name=None):
+        if not self.customer_id:
+            raise InvalidCustomerException("Cannot add a card to a customer that doesn't have a customer_id")
+        gateway = get_gateway(gateway_name)
+        resp = gateway.add_card_to_customer(self, options)
+        return CreditCard(customer=self, **resp)
 
     def __setattr__(self, attr, val):
         if attr in ['gateway_name', 'customer_id', 'data']:

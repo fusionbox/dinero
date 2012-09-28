@@ -84,6 +84,24 @@ Transaction objects::
 
     transaction.refund()
 
+Delayed settlement
+^^^^^^^^^^^^^^^^^^
+
+A transaction can be submitted with ``settle=False`` for an authorization-only
+transaction. Later, the transaction can be ``settle()`` ed::
+
+    transaction = dinero.Transaction.create(
+        ...
+        settle=False
+        )
+
+    # Up to 30 days later...
+    transaction.settle()
+
+TODO: braintree support
+
+
+
 Customer Objects
 ~~~~~~~~~~~~~~~~
 
@@ -143,6 +161,26 @@ it::
         price=2000,
         customer=customer
         )
+
+
+Multiple Cards
+^^^^^^^^^^^^^^
+Like this::
+
+    customer = dinero.Customer.retrieve(...)
+    print customer.cards # existing cards
+    cc = customer.add_card(
+      number='4111-1111-1111-1111',
+      year='2012',
+      month='02',
+      )
+    # charge the new card
+    dinero.Transaction.create(
+      price=12,
+      cc=cc,
+      )
+
+
 
 TESTING
 -------
