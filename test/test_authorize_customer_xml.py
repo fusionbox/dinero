@@ -213,12 +213,12 @@ def test_charge_customer_xml():
                         <transactionKey>{transaction_key}</transactionKey>
                     </merchantAuthentication>
                     <transaction>
-                        <profileTransAuthOnly>
+                        <profileTransAuthCapture>
                             <amount>{price}</amount>
                             <customerProfileId>{customer_id}</customerProfileId>
                             <customerPaymentProfileId>{customer_payment_profile_id}</customerPaymentProfileId>
                             <cardCode>{cvv}</cardCode>
-                        </profileTransAuthOnly>
+                        </profileTransAuthCapture>
                     </transaction>
                 </createCustomerProfileTransactionRequest>""".format(
                         login_id=gateway.login_id,
