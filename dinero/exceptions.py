@@ -69,6 +69,9 @@ class RefundError(PaymentError):
 class InvalidTransactionError(PaymentError):
     pass
 
+class RoutingNumberError(PaymentError):
+    pass
+
 
 ##|
 ##|  CUSTOMER

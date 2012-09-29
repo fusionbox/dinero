@@ -100,6 +100,20 @@ transaction. Later, the transaction can be ``settle()`` ed::
 
 TODO: braintree support
 
+E-Checks
+^^^^^^^^
+Only authorize.net is supported for now.
+
+::
+    transaction = dinero.Transaction.create(100,
+      check={
+        'account_type': 'checking', # 'checking', 'savings', 'businessChecking'
+        'routing_number': '122242607', # must be a valid routing number, even during testing.
+        'account_number': '411111111',
+        'name': 'John Doe',
+        'check_type': 'WEB', #optional, WEB is the default
+        'bank_name': 'Bank of Dinero',
+        })
 
 
 Customer Objects
