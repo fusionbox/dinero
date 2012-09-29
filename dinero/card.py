@@ -1,4 +1,5 @@
 from dinero.log import log
+from dinero import get_gateway
 from dinero.base import DineroObject
 
 class CreditCard(DineroObject):
@@ -8,7 +9,8 @@ class CreditCard(DineroObject):
     `Transaction.create`.
     """
 
-    def __init__(self, customer_id, **kwargs):
+    def __init__(self, gateway_name, customer_id, **kwargs):
+        self.gateway_name = gateway_name
         self.customer_id = customer_id
         self.data = kwargs
 
@@ -17,18 +19,21 @@ class CreditCard(DineroObject):
         raise NotImplemented
 
     @log
-    def delete(self):
-        raise NotImplemented
+    def delete(self, ):
+        gateway = get_gateway(self.gateway_name)
+        gateway.delete_card(self)
+        return True
 
     def __setattr__(self, attr, val):
-        if attr in ['customer_id', 'data']:
+        if attr in ['customer_id', 'data', 'gateway_name']:
             self.__dict__[attr] = val
         else:
             self.data[attr] = val
 
     @classmethod
     def from_dict(cls, dict):
-        return cls(dict['customer_id'],
+        return cls(dict['gateway_name'],
+                   dict['customer_id'],
                    **dict['data']
                    )
 

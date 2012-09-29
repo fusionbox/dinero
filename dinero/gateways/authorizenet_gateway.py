@@ -119,6 +119,9 @@ def xml_to_dict(parent):
     if parent_tag in ('messages', 'errors'):
         ret[parent_tag[:-1]] = []
 
+    if parent_tag == 'profile':
+        ret['paymentProfiles'] = []
+
     for child in parent:
         tag = get_tag(child)
 
@@ -138,6 +141,15 @@ def xml_to_dict(parent):
 
     return ret
 
+
+def dotted_get(dict, key):
+    searches = key.split('.')
+    while searches:
+        try:
+            dict = dict[searches.pop(0)]
+        except KeyError:
+            return None
+    return dict
 
 def get_first_of(dict, possibilities, default=None):
     for i in possibilities:
@@ -621,6 +633,30 @@ class AuthorizeNet(Gateway):
                     raise InvalidCardError(e)
                 raise
 
+    def add_card_to_customer(self, customer, options):
+        root = OrderedDict([
+            ('customerProfileId', customer.customer_id),
+            ('paymentProfile', OrderedDict([
+                ('billTo', self._billto_xml(options)),
+                ('payment', self._payment_xml(options)),
+                ])),
+            ])
+        xml = self.build_xml('createCustomerPaymentProfileRequest', root)
+        resp = xml_to_dict(xml_post(self.url, xml))
+        try:
+            self.check_for_error(resp)
+        except GatewayException as e:
+            error_code = e.args[0][0][0]
+            if error_code == 'E00039':  # Duplicate Record
+                raise DuplicateCustomerError(e)
+            elif error_code == 'E00013':  # Expiration Date is invalid
+                raise InvalidCardError(e)
+            raise
+        return {
+                'customer_id': customer.customer_id,
+                'payment_profile_id': resp['customerPaymentProfileId'],
+                }
+
     def update_customer(self, customer_id, options):
         try:
             xml = self._update_customer_xml(customer_id, options)
@@ -718,42 +754,42 @@ class AuthorizeNet(Gateway):
 
         # more than one paymentProfile?
         if isinstance(resp.get('paymentProfiles'), list):
-            resp['paymentProfiles'] = resp['paymentProfiles'][0]
+            try:
+                resp['paymentProfile'] = resp['paymentProfiles'][0]
+            except IndexError:
+                resp['paymentProfile'] = {}
+        else:
+            resp['paymentProfile'] = resp['paymentProfiles']
 
         # more than one creditCard?
         try:
-            if isinstance(resp['paymentProfiles']['profile']['creditCard'], list):
-                resp['paymentProfiles']['profile']['creditCard'] = resp['paymentProfiles']['profile']['creditCard'][0]
+            if isinstance(resp['paymentProfile']['profile']['creditCard'], list):
+                resp['paymentProfile']['profile']['creditCard'] = resp['paymentProfile']['profile']['creditCard'][0]
         except KeyError:
             pass
 
         gets = {
-            'first_name': 'paymentProfiles.billTo.firstName',
-            'last_name': 'paymentProfiles.billTo.lastName',
-            'company': 'paymentProfiles.billTo.company',
-            'phone': 'paymentProfiles.billTo.phoneNumber',
-            'fax': 'paymentProfiles.billTo.faxNumber',
-            'address': 'paymentProfiles.billTo.address',
-            'state': 'paymentProfiles.billTo.state',
-            'city': 'paymentProfiles.billTo.city',
-            'zip': 'paymentProfiles.billTo.zip',
-            'country': 'paymentProfiles.billTo.country',
-            'last_4': 'paymentProfiles.payment.creditCard.cardNumber',
+            'first_name': 'paymentProfile.billTo.firstName',
+            'last_name': 'paymentProfile.billTo.lastName',
+            'company': 'paymentProfile.billTo.company',
+            'phone': 'paymentProfile.billTo.phoneNumber',
+            'fax': 'paymentProfile.billTo.faxNumber',
+            'address': 'paymentProfile.billTo.address',
+            'state': 'paymentProfile.billTo.state',
+            'city': 'paymentProfile.billTo.city',
+            'zip': 'paymentProfile.billTo.zip',
+            'country': 'paymentProfile.billTo.country',
+            'last_4': 'paymentProfile.payment.creditCard.cardNumber',
 
             # auth.net specific
-            'number': 'paymentProfiles.payment.creditCard.cardNumber',
-            'expiration_date': 'paymentProfiles.payment.creditCard.expirationDate',
-            'customer_payment_profile_id': 'paymentProfiles.customerPaymentProfileId',
+            'number': 'paymentProfile.payment.creditCard.cardNumber',
+            'expiration_date': 'paymentProfile.payment.creditCard.expirationDate',
+            'customer_payment_profile_id': 'paymentProfile.customerPaymentProfileId',
             }
         for key, kvp in gets.iteritems():
-            try:
-                search = kvp.split('.')
-                val = resp
-                while search:
-                    val = val[search.pop(0)]
-                ret[key] = val
-            except KeyError:
-                pass
+            v = dotted_get(resp, kvp)
+            if v:
+                ret[key] = v
 
         if 'expiration_date' in ret:
             # in the form "XXXX" or "YYYY-MM"
@@ -778,10 +814,18 @@ class AuthorizeNet(Gateway):
         if isinstance(profile_list, dict):
             profile_list = [profile_list]
         for profile_dict in profile_list:
+            data = {}
+            for k, v in gets.iteritems():
+                _, _, v = v.partition('.') # get the value without paymentProfile
+                value = dotted_get(profile_dict, v)
+                if value:
+                    data[k] =  value
             ret['cards'].append(CreditCard(
+                gateway_name=self.name,
                 customer_id=ret['customer_id'],
                 payment_profile_id=profile_dict['customerPaymentProfileId'],
                 account_number=profile_dict['payment']['creditCard']['cardNumber'],
+                **data
             ))
 
         return ret
@@ -857,3 +901,12 @@ class AuthorizeNet(Gateway):
         resp = xml_to_dict(xml_post(self.url, xml))
         transaction.auth_code = resp['transactionResponse']['authCode']
         return transaction
+
+    def delete_card(self, card):
+        xml = self.build_xml('deleteCustomerPaymentProfileRequest', OrderedDict([
+            ('customerProfileId', card.customer_id),
+            ('customerPaymentProfileId', card.payment_profile_id),
+            ]))
+
+        resp = xml_to_dict(xml_post(self.url, xml))
+        self.check_for_error(resp)
