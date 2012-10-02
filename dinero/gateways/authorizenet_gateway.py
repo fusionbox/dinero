@@ -6,7 +6,6 @@ from lxml import etree
 from dinero.ordereddict import OrderedDict
 from dinero.exceptions import *
 from dinero.gateways.base import Gateway
-from dinero.card import CreditCard
 
 from datetime import date
 
@@ -809,24 +808,26 @@ class AuthorizeNet(Gateway):
         except KeyError:
             pass
 
-        ret['cards'] = []
+        cards = []
         profile_list = resp['paymentProfiles']
         if isinstance(profile_list, dict):
             profile_list = [profile_list]
         for profile_dict in profile_list:
             data = {}
             for k, v in gets.iteritems():
-                _, _, v = v.partition('.') # get the value without paymentProfile
+                # get the value without paymentProfile
+                _, _, v = v.partition('.')
                 value = dotted_get(profile_dict, v)
                 if value:
-                    data[k] =  value
-            ret['cards'].append(CreditCard(
+                    data[k] = value
+
+            cards.append(dict(
                 gateway_name=self.name,
                 customer_id=ret['customer_id'],
                 payment_profile_id=profile_dict['customerPaymentProfileId'],
                 account_number=profile_dict['payment']['creditCard']['cardNumber'],
                 **data
-            ))
+                ))
 
         return ret
 

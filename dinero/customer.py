@@ -23,9 +23,15 @@ class Customer(DineroObject):
     @log
     def retrieve(cls, customer_id, gateway_name=None):
         gateway = get_gateway(gateway_name)
-        resp = gateway.retrieve_customer(customer_id)
+        resp, cards = gateway.retrieve_customer(customer_id)
         # resp must have customer_id in it
-        return cls(gateway_name=gateway.name, **resp)
+        customer = cls(gateway_name=gateway.name, **resp)
+        for card in cards:
+            customer.cards.append(CreditCard(
+                gateway_name=gateway.name,
+                **card
+                ))
+        return customer
 
     def __init__(self, gateway_name, customer_id, **kwargs):
         self.gateway_name = gateway_name
