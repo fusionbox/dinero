@@ -19,7 +19,7 @@ class CreditCard(DineroObject):
         raise NotImplemented
 
     @log
-    def delete(self, ):
+    def delete(self):
         gateway = get_gateway(self.gateway_name)
         gateway.delete_card(self)
         return True
