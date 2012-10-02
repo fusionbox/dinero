@@ -822,14 +822,13 @@ class AuthorizeNet(Gateway):
                     data[k] = value
 
             cards.append(dict(
-                gateway_name=self.name,
                 customer_id=ret['customer_id'],
                 payment_profile_id=profile_dict['customerPaymentProfileId'],
                 account_number=profile_dict['payment']['creditCard']['cardNumber'],
                 **data
                 ))
 
-        return ret
+        return ret, cards
 
     def _dict_to_payment_profile(self, resp):
         ret = {}

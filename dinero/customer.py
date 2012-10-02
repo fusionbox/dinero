@@ -37,6 +37,7 @@ class Customer(DineroObject):
         self.gateway_name = gateway_name
         self.customer_id = customer_id
         self.data = kwargs
+        self.data['cards'] = []
 
     def update(self, options):
         for key, value in options.iteritems():
