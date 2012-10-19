@@ -72,6 +72,9 @@ class InvalidTransactionError(PaymentError):
 class RoutingNumberError(PaymentError):
     pass
 
+class RefundTooMuchError(PaymentError):
+    "The sum of credits against the referenced transaction would exceed the original debit amount."
+
 
 ##|
 ##|  CUSTOMER
