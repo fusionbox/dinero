@@ -256,6 +256,10 @@ class AuthorizeNet(Gateway):
         payment = self._payment_xml(options)
         if payment:
             transaction_xml['payment'] = payment
+        if options.get('invoice_number'):
+            transaction_xml['order'] = OrderedDict([
+                ('invoiceNumber', options['invoice_number']),
+            ])
         # customer node causes fail if it is present, but empty.
         customer_xml = self._simple_customer_xml(options)
         if customer_xml:
