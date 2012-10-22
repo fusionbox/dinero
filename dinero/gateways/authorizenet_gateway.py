@@ -174,6 +174,7 @@ RESPONSE_CODE_EXCEPTION_MAP = {
         '33': [InvalidTransactionError],
         '44': [CVVError],
         '55': [RefundTooMuchError],
+        '16': [TransactionDoesNotExistError],
         }
 
 
