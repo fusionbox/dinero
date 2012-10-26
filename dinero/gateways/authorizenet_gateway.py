@@ -438,8 +438,13 @@ class AuthorizeNet(Gateway):
             ret['account_number'] = resp['accountNumber']
             ret['card_type'] = resp['accountType']
         except KeyError:
-            ret['account_number'] = resp['payment']['creditCard']['cardNumber']
-            ret['card_type'] = resp['payment']['creditCard']['cardType']
+            if 'creditCard' in resp['payment']:
+                ret['account_number'] = resp['payment']['creditCard']['cardNumber']
+                ret['card_type'] = resp['payment']['creditCard']['cardType']
+            else:
+                ret['account_number'] = resp['payment']['bankAccount']['accountNumber']
+                ret['routing_number'] = resp['payment']['bankAccount']['routingNumber']
+                ret['check_type'] = resp['payment']['bankAccount']['echeckType']
 
         try:
             customer = resp['customer']
