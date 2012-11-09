@@ -192,8 +192,9 @@ def payment_exception_factory(errors):
 
 
 GATEWAY_EXCEPTION_MAP = {
-    'E00003': InvalidCardError,  # Invalid card number
+    'E00003': InvalidCardError,  # Card length too short
     'E00013': InvalidCardError,  # Invalid expiration date
+    'E00015': InvalidCardError,  # Card length wrong for card type
     'E00039': DuplicateCustomerError,
     'E00040': CustomerNotFoundError,
 }
