@@ -846,10 +846,10 @@ class AuthorizeNet(Gateway):
         for profile_dict in profile_list:
             data = {}
             for k, v in gets.iteritems():
-                _, _, v = v.partition('.') # get the value without paymentProfile
+                _, _, v = v.partition('.')  # get the value without paymentProfile
                 value = dotted_get(profile_dict, v)
                 if value:
-                    data[k] =  value
+                    data[k] = value
             ret['cards'].append(CreditCard(
                 gateway_name=self.name,
                 customer_id=ret['customer_id'],
