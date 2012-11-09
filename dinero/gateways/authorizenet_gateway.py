@@ -191,6 +191,26 @@ def payment_exception_factory(errors):
     return exceptions
 
 
+GATEWAY_EXCEPTION_MAP = {
+    'E00003': InvalidCardError,  # Invalid card number
+    'E00013': InvalidCardError,  # Invalid expiration date
+    'E00039': DuplicateCustomerError,
+    'E00040': CustomerNotFoundError,
+}
+
+
+def reraise_gateway_exception(e):
+    """
+    Re-raises a gateway exception as a more specific exception based on the
+    error code.
+    """
+    error_code = e.args[0][0][0]
+    Ex = GATEWAY_EXCEPTION_MAP.get(error_code, None)
+    if Ex:
+        raise Ex(e)
+    raise e
+
+
 class AuthorizeNet(Gateway):
     ns = 'AnetApi/xml/v1/schema/AnetApiSchema.xsd'
     live_url = 'https://api.authorize.net/xml/v1/request.api'
@@ -558,9 +578,7 @@ class AuthorizeNet(Gateway):
                 if customer_match:
                     e.customer_id = customer_match.group(1)
                 raise DuplicateCustomerError(e, customer_id=e.customer_id)
-            elif error_code == 'E00013':  # Expiration Date is invalid
-                raise InvalidCardError(e)
-            raise
+            reraise_gateway_exception(e)
 
         # make a copy of options
         profile = {}
@@ -656,12 +674,7 @@ class AuthorizeNet(Gateway):
             try:
                 self.check_for_error(resp)
             except GatewayException as e:
-                error_code = e.args[0][0][0]
-                if error_code == 'E00039':  # Duplicate Record
-                    raise DuplicateCustomerError(e)
-                elif error_code == 'E00013':  # Expiration Date is invalid
-                    raise InvalidCardError(e)
-                raise
+                reraise_gateway_exception(e)
 
     def add_card_to_customer(self, customer, options):
         root = OrderedDict([
@@ -677,12 +690,8 @@ class AuthorizeNet(Gateway):
         try:
             self.check_for_error(resp)
         except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00039':  # Duplicate Record
-                raise DuplicateCustomerError(e)
-            elif error_code == 'E00013':  # Expiration Date is invalid
-                raise InvalidCardError(e)
-            raise
+            reraise_gateway_exception(e)
+
         return {
             'customer_id': customer.customer_id,
             'payment_profile_id': resp['customerPaymentProfileId'],
@@ -694,10 +703,7 @@ class AuthorizeNet(Gateway):
             resp = xml_to_dict(xml_post(self.url, xml))
             self.check_for_error(resp)
         except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
+            reraise_gateway_exception(e)
         else:
             self._update_customer_payment(customer_id, options)
 
@@ -712,10 +718,7 @@ class AuthorizeNet(Gateway):
         try:
             self.check_for_error(resp)
         except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
+            reraise_gateway_exception(e)
 
         return self._dict_to_customer(resp['profile'])
 
@@ -727,10 +730,7 @@ class AuthorizeNet(Gateway):
         try:
             self.check_for_error(resp)
         except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
+            reraise_gateway_exception(e)
 
         return True
 
@@ -751,10 +751,7 @@ class AuthorizeNet(Gateway):
         try:
             self.check_for_error(resp)
         except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
+            reraise_gateway_exception(e)
 
         return self._resp_to_transaction_dict_direct_response(resp['directResponse'], price)
 
@@ -770,10 +767,7 @@ class AuthorizeNet(Gateway):
         try:
             self.check_for_error(resp)
         except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
+            reraise_gateway_exception(e)
 
         return resp
 
