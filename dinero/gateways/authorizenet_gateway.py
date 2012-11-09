@@ -60,11 +60,11 @@ AVS_ADDRESS_SUCCESSFUL_RESPONSES = [
 
 def xml_post(url, obj):
     resp = requests.post(
-            url,
-            data=etree.tostring(obj),
-            headers={'content-type': 'application/xml'},
-            verify=True,
-            )
+        url,
+        data=etree.tostring(obj),
+        headers={'content-type': 'application/xml'},
+        verify=True,
+    )
 
     content = resp.content
     if isinstance(content, unicode) and content[0] == u'\ufeff':
@@ -151,6 +151,7 @@ def dotted_get(dict, key):
             return None
     return dict
 
+
 def get_first_of(dict, possibilities, default=None):
     for i in possibilities:
         if i in dict:
@@ -160,23 +161,23 @@ def get_first_of(dict, possibilities, default=None):
 
 
 RESPONSE_CODE_EXCEPTION_MAP = {
-        '9':  [RoutingNumberError],
-        '8':  [ExpiryError],
-        '6':  [InvalidCardError],
-        '37': [InvalidCardError],
-        '5':  [InvalidAmountError],
-        '27': [AVSError],
-        '65': [CVVError],
-        '45': [AVSError, CVVError],
-        '2':  [CardDeclinedError],
-        '11': [DuplicateTransactionError],
-        '54': [RefundError],
-        '33': [InvalidTransactionError],
-        '44': [CVVError],
-        '55': [RefundTooMuchError],
-        '16': [TransactionDoesNotExistError],
-        '17': [InvalidCardError],
-        }
+    '9':  [RoutingNumberError],
+    '8':  [ExpiryError],
+    '6':  [InvalidCardError],
+    '37': [InvalidCardError],
+    '5':  [InvalidAmountError],
+    '27': [AVSError],
+    '65': [CVVError],
+    '45': [AVSError, CVVError],
+    '2':  [CardDeclinedError],
+    '11': [DuplicateTransactionError],
+    '54': [RefundError],
+    '33': [InvalidTransactionError],
+    '44': [CVVError],
+    '55': [RefundTooMuchError],
+    '16': [TransactionDoesNotExistError],
+    '17': [InvalidCardError],
+}
 
 
 def payment_exception_factory(errors):
@@ -220,9 +221,9 @@ class AuthorizeNet(Gateway):
 
     def build_xml(self, root_name, root):
         root.insert(0, 'merchantAuthentication', OrderedDict([
-                ('name', self.login_id),
-                ('transactionKey', self.transaction_key),
-                ]))
+            ('name', self.login_id),
+            ('transactionKey', self.transaction_key),
+        ]))
 
         return _dict_to_xml(root_name, root, self.ns)
 
@@ -253,9 +254,9 @@ class AuthorizeNet(Gateway):
             txn_type = 'authOnlyTransaction'
 
         transaction_xml = OrderedDict([
-                ('transactionType', txn_type),
-                ('amount', price),
-            ])
+            ('transactionType', txn_type),
+            ('amount', price),
+        ])
         payment = self._payment_xml(options)
         if payment:
             transaction_xml['payment'] = payment
@@ -285,7 +286,7 @@ class AuthorizeNet(Gateway):
 
         xml = self.build_xml('createTransactionRequest', OrderedDict([
             ('transactionRequest', transaction_xml,),
-            ]))
+        ]))
         return xml
 
     def _payment_check_xml(self, options):
@@ -298,9 +299,8 @@ class AuthorizeNet(Gateway):
                 # don't know what this default should be
                 ('echeckType', options.get('check_type', 'WEB')),
                 ('bankName', options.get('bank_name')),
-                ])
-                ),
-            ])
+            ])),
+        ])
 
     def _payment_xml(self, options):
         if 'check' in options:
@@ -321,9 +321,9 @@ class AuthorizeNet(Gateway):
                 ('cardNumber', prepare_number(options['number'])),
                 ('expirationDate', expiry),
                 ('cardCode', options.get('cvv')),
-                ])),
-            ])
-        if any(val != None for val in payment_xml.values()):
+            ])),
+        ])
+        if any(val is not None for val in payment_xml.values()):
             return payment_xml
         return None
 
@@ -339,8 +339,8 @@ class AuthorizeNet(Gateway):
             ('country', options.get('country')),
             ('phoneNumber', options.get('phone')),
             ('faxNumber', options.get('fax')),
-            ])
-        if any(val != None for val in billto_xml.values()):
+        ])
+        if any(val is not None for val in billto_xml.values()):
             return billto_xml
         return None
 
@@ -348,9 +348,9 @@ class AuthorizeNet(Gateway):
         if not ('customer_id' in options or 'email' in options):
             return None
         return OrderedDict([
-                ('id', options.get('customer_id')),
-                ('email', options.get('email')),
-                ])
+            ('id', options.get('customer_id')),
+            ('email', options.get('email')),
+        ])
 
     def _create_customer_xml(self, options):
         # include <billTo> and <payment> fields only if
@@ -368,7 +368,7 @@ class AuthorizeNet(Gateway):
             'country',
             'phone',
             'fax',
-            ]
+        ]
         if any(field in options for field in billto_fields):
             billto = ('billTo', self._billto_xml(options))
         else:
@@ -395,7 +395,7 @@ class AuthorizeNet(Gateway):
             stuff.append(payment_profiles)
         root = OrderedDict([
             ('profile', OrderedDict(stuff)),
-            ])
+        ])
         return self.build_xml('createCustomerProfileRequest', root)
 
     def _update_customer_xml(self, customer_id, options):
@@ -403,7 +403,7 @@ class AuthorizeNet(Gateway):
 
         root = OrderedDict([
             ('profile', OrderedDict(stuff)),
-            ])
+        ])
         return self.build_xml('updateCustomerProfileRequest', root)
 
     def _charge_customer_xml(self, customer_id, customer_payment_profile_id, price, options):
@@ -413,27 +413,27 @@ class AuthorizeNet(Gateway):
             txn_type = 'profileTransAuthOnly'
 
         return self.build_xml('createCustomerProfileTransactionRequest', OrderedDict([
-                ('transaction', OrderedDict([
-                    (txn_type, OrderedDict([
-                        ('amount', price),
-                        ('customerProfileId', customer_id),
-                        ('customerPaymentProfileId', customer_payment_profile_id),
-                        ('cardCode', options.get('cvv')),
-                    ])),
-                ]))
+            ('transaction', OrderedDict([
+                (txn_type, OrderedDict([
+                    ('amount', price),
+                    ('customerProfileId', customer_id),
+                    ('customerPaymentProfileId', customer_payment_profile_id),
+                    ('cardCode', options.get('cvv')),
+                ])),
             ]))
+        ]))
 
     def _resp_to_transaction_dict(self, resp, price):
         ret = {
-                'price': price,
-                'transaction_id': resp['transId'],
-                'avs_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_SUCCESSFUL_RESPONSES,
-                'cvv_successful': get_first_of(resp, ['cvvResultCode', 'cardCodeResponse']) in CVV_SUCCESSFUL_RESPONSES,
-                'avs_zip_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ZIP_SUCCESSFUL_RESPONSES,
-                'avs_address_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
-                'auth_code': resp.get('authCode'),
-                'status': resp.get('transactionStatus'),
-                }
+            'price': price,
+            'transaction_id': resp['transId'],
+            'avs_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_SUCCESSFUL_RESPONSES,
+            'cvv_successful': get_first_of(resp, ['cvvResultCode', 'cardCodeResponse']) in CVV_SUCCESSFUL_RESPONSES,
+            'avs_zip_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ZIP_SUCCESSFUL_RESPONSES,
+            'avs_address_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
+            'auth_code': resp.get('authCode'),
+            'status': resp.get('transactionStatus'),
+        }
 
         try:
             ret['account_number'] = resp['accountNumber']
@@ -476,14 +476,14 @@ class AuthorizeNet(Gateway):
     def _resp_to_transaction_dict_direct_response(self, direct_resp, price):
         resp_list = direct_resp.split(',')
         ret = {
-                'price': price,
-                'response_code': resp_list[self.RESPONSE_CODE],
-                'auth_code': resp_list[self.AUTH_CODE],
-                'transaction_id': resp_list[self.TRANSACTION_ID],
-                'account_number': resp_list[self.ACCOUNT_NUMBER],
-                'card_type': resp_list[self.ACCOUNT_TYPE],
-                'last_4': resp_list[self.ACCOUNT_NUMBER][-4:],
-                }
+            'price': price,
+            'response_code': resp_list[self.RESPONSE_CODE],
+            'auth_code': resp_list[self.AUTH_CODE],
+            'transaction_id': resp_list[self.TRANSACTION_ID],
+            'account_number': resp_list[self.ACCOUNT_NUMBER],
+            'card_type': resp_list[self.ACCOUNT_TYPE],
+            'last_4': resp_list[self.ACCOUNT_NUMBER][-4:],
+        }
         return ret
 
     def charge(self, price, options):
@@ -502,7 +502,7 @@ class AuthorizeNet(Gateway):
     def retrieve(self, transaction_id):
         xml = self.build_xml('getTransactionDetailsRequest', OrderedDict([
             ('transId', transaction_id),
-            ]))
+        ]))
 
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
@@ -514,8 +514,8 @@ class AuthorizeNet(Gateway):
             ('transactionRequest', OrderedDict([
                 ('transactionType', 'voidTransaction'),
                 ('refTransId', transaction.transaction_id),
-                ])),
-            ]))
+            ])),
+        ]))
 
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
@@ -533,8 +533,8 @@ class AuthorizeNet(Gateway):
                     'month': 'XX'
                 })),
                 ('refTransId', transaction.transaction_id),
-                ])),
-            ]))
+            ])),
+        ]))
 
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
@@ -593,7 +593,7 @@ class AuthorizeNet(Gateway):
             'country',
             'phone',
             'fax',
-            ]
+        ]
         if any(field in options for field in billto_fields):
             billto = ('billTo', self._billto_xml(options))
         else:
@@ -642,14 +642,14 @@ class AuthorizeNet(Gateway):
                 root = OrderedDict([
                     ('customerProfileId', customer_id),
                     ('paymentProfile', OrderedDict(stuff)),
-                    ])
+                ])
                 xml = self.build_xml('updateCustomerPaymentProfileRequest', root)
                 resp = xml_to_dict(xml_post(self.url, xml))
             else:
                 root = OrderedDict([
                     ('customerProfileId', customer_id),
                     ('paymentProfile', OrderedDict(stuff)),
-                    ])
+                ])
                 xml = self.build_xml('createCustomerPaymentProfileRequest', root)
                 resp = xml_to_dict(xml_post(self.url, xml))
 
@@ -669,8 +669,8 @@ class AuthorizeNet(Gateway):
             ('paymentProfile', OrderedDict([
                 ('billTo', self._billto_xml(options)),
                 ('payment', self._payment_xml(options)),
-                ])),
-            ])
+            ])),
+        ])
         xml = self.build_xml('createCustomerPaymentProfileRequest', root)
         resp = xml_to_dict(xml_post(self.url, xml))
         try:
@@ -685,7 +685,7 @@ class AuthorizeNet(Gateway):
         return {
                 'customer_id': customer.customer_id,
                 'payment_profile_id': resp['customerPaymentProfileId'],
-                }
+            }
 
     def update_customer(self, customer_id, options):
         try:
@@ -705,7 +705,7 @@ class AuthorizeNet(Gateway):
     def retrieve_customer(self, customer_id):
         xml = self.build_xml('getCustomerProfileRequest', OrderedDict([
             ('customerProfileId', customer_id),
-            ]))
+        ]))
 
         resp = xml_to_dict(xml_post(self.url, xml))
         try:
@@ -721,7 +721,7 @@ class AuthorizeNet(Gateway):
     def delete_customer(self, customer_id):
         xml = self.build_xml('deleteCustomerProfileRequest', OrderedDict([
             ('customerProfileId', customer_id),
-            ]))
+        ]))
         resp = xml_to_dict(xml_post(self.url, xml))
         try:
             self.check_for_error(resp)
@@ -764,7 +764,7 @@ class AuthorizeNet(Gateway):
         xml = self.build_xml('getCustomerPaymentProfileRequest', OrderedDict([
             ('customerProfileId', customer_id),
             ('customerPaymentProfileId', customer_payment_profile_id),
-            ]))
+        ]))
         resp = xml_to_dict(xml_post(self.url, xml))
         try:
             self.check_for_error(resp)
@@ -778,9 +778,9 @@ class AuthorizeNet(Gateway):
 
     def _dict_to_customer(self, resp):
         ret = {
-                'customer_id': resp['customerProfileId'],
-                'email': resp['email'],
-            }
+            'customer_id': resp['customerProfileId'],
+            'email': resp['email'],
+        }
 
         # more than one paymentProfile?
         if isinstance(resp.get('paymentProfiles'), list):
@@ -815,7 +815,7 @@ class AuthorizeNet(Gateway):
             'number': 'paymentProfile.payment.creditCard.cardNumber',
             'expiration_date': 'paymentProfile.payment.creditCard.expirationDate',
             'customer_payment_profile_id': 'paymentProfile.customerPaymentProfileId',
-            }
+        }
         for key, kvp in gets.iteritems():
             v = dotted_get(resp, kvp)
             if v:
@@ -888,7 +888,7 @@ class AuthorizeNet(Gateway):
 
             # auth.net specific
             'customer_payment_profile_id': 'paymentProfile.customerPaymentProfileId',
-            }
+        }
         for key, kvp in gets.iteritems():
             try:
                 search = kvp.split('.')
@@ -925,8 +925,8 @@ class AuthorizeNet(Gateway):
                 ('transactionType', 'priorAuthCaptureTransaction'),
                 ('amount', amount),
                 ('refTransId', transaction.transaction_id),
-                ])),
-            ]))
+            ])),
+        ]))
 
         resp = xml_to_dict(xml_post(self.url, xml))
         transaction.auth_code = resp['transactionResponse']['authCode']
@@ -936,7 +936,7 @@ class AuthorizeNet(Gateway):
         xml = self.build_xml('deleteCustomerPaymentProfileRequest', OrderedDict([
             ('customerProfileId', card.customer_id),
             ('customerPaymentProfileId', card.payment_profile_id),
-            ]))
+        ]))
 
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
