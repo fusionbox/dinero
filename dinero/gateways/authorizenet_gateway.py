@@ -272,17 +272,17 @@ class AuthorizeNet(Gateway):
         if billto:
             transaction_xml['billTo'] = billto
         transaction_xml['transactionSettings'] = OrderedDict([
-                    ('setting', [
-                        OrderedDict([
-                            ('settingName', 'duplicateWindow'),
-                            ('settingValue', 0),
-                            ]),
-                        OrderedDict([
-                            ('settingName', 'testRequest'),
-                            ('settingValue', 'false'),
-                            ]),
-                        ],)
-                    ])
+            ('setting', [
+                OrderedDict([
+                    ('settingName', 'duplicateWindow'),
+                    ('settingValue', 0),
+                ]),
+                OrderedDict([
+                    ('settingName', 'testRequest'),
+                    ('settingValue', 'false'),
+                ]),
+            ],)
+        ])
 
         xml = self.build_xml('createTransactionRequest', OrderedDict([
             ('transactionRequest', transaction_xml,),
