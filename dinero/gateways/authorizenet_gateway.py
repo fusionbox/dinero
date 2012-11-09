@@ -673,6 +673,7 @@ class AuthorizeNet(Gateway):
         ])
         xml = self.build_xml('createCustomerPaymentProfileRequest', root)
         resp = xml_to_dict(xml_post(self.url, xml))
+
         try:
             self.check_for_error(resp)
         except GatewayException as e:
@@ -683,9 +684,9 @@ class AuthorizeNet(Gateway):
                 raise InvalidCardError(e)
             raise
         return {
-                'customer_id': customer.customer_id,
-                'payment_profile_id': resp['customerPaymentProfileId'],
-            }
+            'customer_id': customer.customer_id,
+            'payment_profile_id': resp['customerPaymentProfileId'],
+        }
 
     def update_customer(self, customer_id, options):
         try:
