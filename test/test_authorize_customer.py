@@ -31,9 +31,9 @@ def test_create_delete_customer():
 
     customer = dinero.Customer.create(gateway_name='authorize.net', **options)
     try:
-        assert customer.customer_payment_profile_id, 'customer.customer_payment_profile_id is not set'
+        assert customer.card_id, 'customer.card_id is not set'
     except AttributeError:
-        assert False, 'customer.customer_payment_profile_id is not set'
+        assert False, 'customer.card_id is not set'
     for key, val in options.iteritems():
         try:
             assert val == getattr(customer, key), 'customer.%s != options[%s]' % (key, key)

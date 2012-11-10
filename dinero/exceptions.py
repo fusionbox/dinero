@@ -90,5 +90,9 @@ class DuplicateCustomerError(CustomerError):
         super(DuplicateCustomerError, self).__init__(*args, **kwargs)
 
 
+class DuplicateCardError(CustomerError):
+    pass
+
+
 class CustomerNotFoundError(CustomerError):
     pass

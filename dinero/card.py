@@ -2,6 +2,7 @@ from dinero.log import log
 from dinero import get_gateway
 from dinero.base import DineroObject
 
+
 class CreditCard(DineroObject):
     """
     A Customer resource. `Customer.create` uses the gateway to create a
@@ -16,7 +17,8 @@ class CreditCard(DineroObject):
 
     @log
     def save(self):
-        raise NotImplemented
+        gateway = get_gateway(self.gateway_name)
+        gateway.update_card(self)
 
     @log
     def delete(self):
