@@ -1,0 +1,196 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Transactions &mdash; dinero 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="dinero 0.0.1 documentation" href="index.html" />
+    <link rel="prev" title="Gateways" href="gateways.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="gateways.html" title="Gateways"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">dinero 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="transactions">
+<h1>Transactions<a class="headerlink" href="#transactions" title="Permalink to this headline">¶</a></h1>
+<p>Transaction objects contain data about payments.  Every transaction object has
+a <tt class="docutils literal"><span class="pre">transaction_id</span></tt> and a <tt class="docutils literal"><span class="pre">price</span></tt>.</p>
+<p>You can create a basic credit card transaction by using
+<a class="reference internal" href="#dinero.transaction.Transaction.create" title="dinero.transaction.Transaction.create"><tt class="xref py py-meth docutils literal"><span class="pre">Transaction.create()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">dinero</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transaction</span> <span class="o">=</span> <span class="n">dinero</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<span class="go">        price=200,</span>
+<span class="go">        number=&#39;4111111111111111&#39;,</span>
+<span class="go">        month=&#39;12&#39;,</span>
+<span class="go">        year=&#39;2015&#39;,</span>
+<span class="go">    )</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transaction</span>
+</pre></div>
+</div>
+<p>This will charge the credit card $200.  If you store the <tt class="docutils literal"><span class="pre">transaction_id</span></tt>,
+you can later retrieve the transaction object.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">transaction</span> <span class="o">=</span> <span class="n">dinero</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="s">&#39;0123456789&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When you have a transaction object, you can refund it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">transaction</span><span class="o">.</span><span class="n">refund</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Refund takes an optional <tt class="docutils literal"><span class="pre">amount</span></tt> argument, in case you only wish to give a
+partial refund.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">transaction</span><span class="o">.</span><span class="n">refund</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="delayed-settlement">
+<h2>Delayed Settlement<a class="headerlink" href="#delayed-settlement" title="Permalink to this headline">¶</a></h2>
+<p>By default, dinero will automatically submit a transaction for settlement,
+however you can override this by setting the <tt class="docutils literal"><span class="pre">settle</span></tt> argument to <tt class="docutils literal"><span class="pre">False</span></tt>.
+When you need to settle a transaction, you can call <a class="reference internal" href="#dinero.transaction.Transaction.settle" title="dinero.transaction.Transaction.settle"><tt class="xref py py-meth docutils literal"><span class="pre">Transaction.settle()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">transaction</span> <span class="o">=</span> <span class="n">dinero</span><span class="o">.</span><span class="n">Transaction</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">price</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">number</span><span class="o">=</span><span class="s">&#39;4111111111111111&#39;</span><span class="p">,</span>
+        <span class="n">month</span><span class="o">=</span><span class="s">&#39;12&#39;</span><span class="p">,</span>
+        <span class="n">year</span><span class="o">=</span><span class="s">&#39;2015&#39;</span><span class="p">,</span>
+        <span class="n">settle</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="o">...</span>
+<span class="n">transaction</span><span class="o">.</span><span class="n">settle</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dinero.transaction.Transaction">
+<em class="property">class </em><tt class="descclassname">dinero.transaction.</tt><tt class="descname">Transaction</tt><big>(</big><em>gateway_name</em>, <em>price</em>, <em>transaction_id</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/dinero/transaction.html#Transaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dinero.transaction.Transaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Transaction resource. <a href="#id1"><span class="problematic" id="id2">:method:`create`</span></a> uses the gateway to
+charge a card, and returns an object for future manipulations of the
+transaction, like refunding it.</p>
+<dl class="classmethod">
+<dt id="dinero.transaction.Transaction.create">
+<em class="property">classmethod </em><tt class="descname">create</tt><big>(</big><em>price</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/dinero/transaction.html#Transaction.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dinero.transaction.Transaction.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a payment.  This method will actually charge your customer.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="dinero.transaction.Transaction.retrieve">
+<em class="property">classmethod </em><tt class="descname">retrieve</tt><big>(</big><em>transaction_id</em><span class="optional">[</span>, <em>gateway_name=None</em><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/dinero/transaction.html#Transaction.retrieve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dinero.transaction.Transaction.retrieve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetches a transaction object from the gateway.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dinero.transaction.Transaction.refund">
+<tt class="descname">refund</tt><big>(</big><span class="optional">[</span><em>amount=None</em><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/dinero/transaction.html#Transaction.refund"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dinero.transaction.Transaction.refund" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="docutils literal"><span class="pre">amount</span></tt> is None dinero will refund the full price of the
+transaction.</p>
+<p>Payment gateways often allow you to refund only a certain amount of
+money from a transaction.  Refund abstracts the difference between
+refunding and voiding a payment so that normally you don&#8217;t need to
+worry about it.  However, please note that you can only refund the
+entire amount of a transaction before it is settled.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dinero.transaction.Transaction.settle">
+<tt class="descname">settle</tt><big>(</big><span class="optional">[</span><em>amount=None</em><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/dinero/transaction.html#Transaction.settle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dinero.transaction.Transaction.settle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Transactions</a><ul>
+<li><a class="reference internal" href="#delayed-settlement">Delayed Settlement</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gateways.html"
+                        title="previous chapter">Gateways</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/transactions.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="gateways.html" title="Gateways"
+             >previous</a> |</li>
+        <li><a href="index.html">dinero 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Fusionbox.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

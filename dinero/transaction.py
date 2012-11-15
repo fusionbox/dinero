@@ -5,14 +5,17 @@ from dinero.base import DineroObject
 
 class Transaction(DineroObject):
     """
-    A Transaction resource. `Transaction.create` uses the gateway to charge a
-    card, and returns an object for future manipulations of the transaction,
-    like refunding it.
+    A Transaction resource. :method:`create` uses the gateway to
+    charge a card, and returns an object for future manipulations of the
+    transaction, like refunding it.
     """
 
     @classmethod
     @log
     def create(cls, price, gateway_name=None, **kwargs):
+        """
+        Creates a payment.  This method will actually charge your customer.
+        """
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
         return cls(gateway_name=gateway.name, **resp)
@@ -20,6 +23,9 @@ class Transaction(DineroObject):
     @classmethod
     @log
     def retrieve(cls, transaction_id, gateway_name=None):
+        """
+        Fetches a transaction object from the gateway.
+        """
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve(transaction_id)
         return cls(gateway_name=gateway.name, **resp)
@@ -32,8 +38,19 @@ class Transaction(DineroObject):
 
     @log
     def refund(self, amount=None):
+        """
+        If ``amount`` is None dinero will refund the full price of the
+        transaction.
+
+        Payment gateways often allow you to refund only a certain amount of
+        money from a transaction.  Refund abstracts the difference between
+        refunding and voiding a payment so that normally you don't need to
+        worry about it.  However, please note that you can only refund the
+        entire amount of a transaction before it is settled.
+        """
         gateway = get_gateway(self.gateway_name)
 
+        # TODO: can this implementation live in dinero.gateways.AuthorizeNet?
         try:
             return gateway.refund(self, amount or self.price)
         except exceptions.PaymentException:
