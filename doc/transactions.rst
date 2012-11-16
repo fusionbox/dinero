@@ -1,7 +1,7 @@
 Transactions
 ------------
 
-.. py:currentmodule:: dinero.transaction
+.. currentmodule:: dinero.transaction
 
 Transaction objects contain data about payments.  Every transaction object has
 a ``transaction_id`` and a ``price``.

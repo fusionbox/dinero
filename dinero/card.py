@@ -4,11 +4,6 @@ from dinero.base import DineroObject
 
 
 class CreditCard(DineroObject):
-    """
-    A Customer resource. `Customer.create` uses the gateway to create a
-    customer.  You can use this Customer object in calls to
-    `Transaction.create`.
-    """
 
     def __init__(self, gateway_name, customer_id, **kwargs):
         self.gateway_name = gateway_name

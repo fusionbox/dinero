@@ -284,4 +284,6 @@ epub_copyright = u'2012, Fusionbox'
 # Allow duplicate toc entries.
 #epub_tocdup = True
 
+todo_include_todos = True
+
 sys.path.insert(0, os.path.abspath('..'))

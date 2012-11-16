@@ -11,9 +11,11 @@ Usage
 .. toctree::
     :maxdepth: 1
 
+    payments
     quickstart
     gateways
     transactions
+    customers
 
 
 
