@@ -23,14 +23,21 @@ class Customer(DineroObject):
     @log
     def retrieve(cls, customer_id, gateway_name=None):
         gateway = get_gateway(gateway_name)
-        resp = gateway.retrieve_customer(customer_id)
+        resp, cards = gateway.retrieve_customer(customer_id)
         # resp must have customer_id in it
-        return cls(gateway_name=gateway.name, **resp)
+        customer = cls(gateway_name=gateway.name, **resp)
+        for card in cards:
+            customer.cards.append(CreditCard(
+                gateway_name=gateway.name,
+                **card
+                ))
+        return customer
 
     def __init__(self, gateway_name, customer_id, **kwargs):
         self.gateway_name = gateway_name
         self.customer_id = customer_id
         self.data = kwargs
+        self.data['cards'] = []
 
     def update(self, options):
         for key, value in options.iteritems():
@@ -59,7 +66,9 @@ class Customer(DineroObject):
             raise InvalidCustomerException("Cannot add a card to a customer that doesn't have a customer_id")
         gateway = get_gateway(gateway_name)
         resp = gateway.add_card_to_customer(self, options)
-        return CreditCard(customer=self, **resp)
+        card = CreditCard(gateway_name=self.gateway_name, **resp)
+        self.cards.append(card)
+        return card
 
     def __setattr__(self, attr, val):
         if attr in ['gateway_name', 'customer_id', 'data']:

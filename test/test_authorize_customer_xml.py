@@ -201,11 +201,11 @@ def test_charge_customer_xml():
     gateway = dinero.get_gateway('authorize.net')
     price = 123.45
     customer_id = '123456789'
-    customer_payment_profile_id = '987654321'
+    card_id = '987654321'
     options = {
         'cvv': '123'
     }
-    xml = gateway._charge_customer_xml(customer_id, customer_payment_profile_id, price, options)
+    xml = gateway._charge_customer_xml(customer_id, card_id, price, options)
     should_be = trimmy(
              """<createCustomerProfileTransactionRequest xmlns="AnetApi/xml/v1/schema/AnetApiSchema.xsd">
                     <merchantAuthentication>
@@ -216,7 +216,7 @@ def test_charge_customer_xml():
                         <profileTransAuthCapture>
                             <amount>{price}</amount>
                             <customerProfileId>{customer_id}</customerProfileId>
-                            <customerPaymentProfileId>{customer_payment_profile_id}</customerPaymentProfileId>
+                            <customerPaymentProfileId>{card_id}</customerPaymentProfileId>
                             <cardCode>{cvv}</cardCode>
                         </profileTransAuthCapture>
                     </transaction>
@@ -225,7 +225,7 @@ def test_charge_customer_xml():
                         transaction_key=gateway.transaction_key,
                         price=price,
                         customer_id=customer_id,
-                        customer_payment_profile_id=customer_payment_profile_id,
+                        card_id=card_id,
                         **options
                     ))
     assert etree.tostring(xml) == should_be, "Invalid XML (\n\t%s\n\t%s\n)" % (etree.tostring(xml), should_be)
