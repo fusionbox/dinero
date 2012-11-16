@@ -5,9 +5,8 @@ from dinero.base import DineroObject
 
 class Transaction(DineroObject):
     """
-    A Transaction resource. :method:`create` uses the gateway to
-    charge a card, and returns an object for future manipulations of the
-    transaction, like refunding it.
+    :class:`Transaction` is an abstraction over payments in a gateway.  This is
+    the interface for creating payments.
     """
 
     @classmethod
@@ -15,6 +14,41 @@ class Transaction(DineroObject):
     def create(cls, price, gateway_name=None, **kwargs):
         """
         Creates a payment.  This method will actually charge your customer.
+        :meth:`create` can be called in several different ways.
+
+        You can call this with the credit card information directly. ::
+
+            Transaction.create(
+                price=200,
+                number='4111111111111111',
+                year='2015',
+                month='12',
+
+                # optional
+                first_name='John',
+                last_name='Smith,'
+                zip='12345',
+                address='123 Elm St',
+                city='Denver',
+                state='CO',
+                cvv='900',
+                email='johnsmith@example.com',
+            )
+
+        If you have a :class:`dinero.Customer` object, you can create a
+        transaction against the customer. ::
+
+            customer = Customer.create(
+                ...
+            )
+
+            Transaction.create(
+                price=200,
+                customer=customer,
+            )
+
+        Other payment options include ``card`` and ``check``.  See
+        :class:`dinero.CreditCard` for more information.
         """
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
@@ -57,11 +91,18 @@ class Transaction(DineroObject):
             if amount is None or amount == self.price:
                 return gateway.void(self)
             else:
-                raise exceptions.PaymentException("You cannot refund a "
-                        "transaction that hasn't been settled unless you "
-                        "refund it for the full amount.")
+                raise exceptions.PaymentException(
+                    "You cannot refund a transaction that hasn't been settled"
+                    " unless you refund it for the full amount."
+                )
+
     @log
     def settle(self, amount=None):
+        """
+        If you create a transaction without settling it, you can settle it with
+        this method.  It is possible to settle only part of a transaction.  If
+        ``amount`` is None, the full transaction price is settled.
+        """
         gateway = get_gateway(self.gateway_name)
         return gateway.settle(self, amount or self.price)
 
