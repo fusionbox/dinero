@@ -28,10 +28,9 @@ you can later retrieve the transaction object. ::
     200
 
 .. note::
-    Like many methods in dinero, :meth:`Transaction.create` and
-    :meth:`Transaction.retrieve` accept a ``gateway_name`` parameter.  This
-    parameter corresponds with the gateway name that you created when
-    configuring your gateways.
+    Like many methods in dinero, :meth:`Transaction.create` and :meth:`Transaction.retrieve`
+    accept a ``gateway_name`` parameter.  This parameter corresponds with the
+    gateway name that you created when configuring your gateways.
 
     If you had the following configuration::
 
