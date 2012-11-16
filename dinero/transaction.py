@@ -5,14 +5,51 @@ from dinero.base import DineroObject
 
 class Transaction(DineroObject):
     """
-    A Transaction resource. `Transaction.create` uses the gateway to charge a
-    card, and returns an object for future manipulations of the transaction,
-    like refunding it.
+    :class:`Transaction` is an abstraction over payments in a gateway.  This is
+    the interface for creating payments.
     """
 
     @classmethod
     @log
     def create(cls, price, gateway_name=None, **kwargs):
+        """
+        Creates a payment.  This method will actually charge your customer.
+        :meth:`create` can be called in several different ways.
+
+        You can call this with the credit card information directly. ::
+
+            Transaction.create(
+                price=200,
+                number='4111111111111111',
+                year='2015',
+                month='12',
+
+                # optional
+                first_name='John',
+                last_name='Smith,'
+                zip='12345',
+                address='123 Elm St',
+                city='Denver',
+                state='CO',
+                cvv='900',
+                email='johnsmith@example.com',
+            )
+
+        If you have a :class:`dinero.Customer` object, you can create a
+        transaction against the customer. ::
+
+            customer = Customer.create(
+                ...
+            )
+
+            Transaction.create(
+                price=200,
+                customer=customer,
+            )
+
+        Other payment options include ``card`` and ``check``.  See
+        :class:`dinero.CreditCard` for more information.
+        """
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
         return cls(gateway_name=gateway.name, **resp)
@@ -20,6 +57,9 @@ class Transaction(DineroObject):
     @classmethod
     @log
     def retrieve(cls, transaction_id, gateway_name=None):
+        """
+        Fetches a transaction object from the gateway.
+        """
         gateway = get_gateway(gateway_name)
         resp = gateway.retrieve(transaction_id)
         return cls(gateway_name=gateway.name, **resp)
@@ -32,19 +72,37 @@ class Transaction(DineroObject):
 
     @log
     def refund(self, amount=None):
+        """
+        If ``amount`` is None dinero will refund the full price of the
+        transaction.
+
+        Payment gateways often allow you to refund only a certain amount of
+        money from a transaction.  Refund abstracts the difference between
+        refunding and voiding a payment so that normally you don't need to
+        worry about it.  However, please note that you can only refund the
+        entire amount of a transaction before it is settled.
+        """
         gateway = get_gateway(self.gateway_name)
 
+        # TODO: can this implementation live in dinero.gateways.AuthorizeNet?
         try:
             return gateway.refund(self, amount or self.price)
         except exceptions.PaymentException:
             if amount is None or amount == self.price:
                 return gateway.void(self)
             else:
-                raise exceptions.PaymentException("You cannot refund a "
-                        "transaction that hasn't been settled unless you "
-                        "refund it for the full amount.")
+                raise exceptions.PaymentException(
+                    "You cannot refund a transaction that hasn't been settled"
+                    " unless you refund it for the full amount."
+                )
+
     @log
     def settle(self, amount=None):
+        """
+        If you create a transaction without settling it, you can settle it with
+        this method.  It is possible to settle only part of a transaction.  If
+        ``amount`` is None, the full transaction price is settled.
+        """
         gateway = get_gateway(self.gateway_name)
         return gateway.settle(self, amount or self.price)
 

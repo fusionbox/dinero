@@ -7,9 +7,7 @@ from dinero.base import DineroObject
 
 class Customer(DineroObject):
     """
-    A Customer resource. `Customer.create` uses the gateway to create a
-    customer.  You can use this Customer object in calls to
-    `Transaction.create`.
+    A :class:`Customer` object stores information about your customers.
     """
 
     @classmethod
