@@ -13,6 +13,24 @@ class Customer(DineroObject):
     @classmethod
     @log
     def create(cls, gateway_name=None, **kwargs):
+        """
+        Creates and stores a customer object.  When you first create a
+        customer, you are required to also pass in arguments for a credit card. ::
+
+            Customer.create(
+                email='bill@example.com',
+
+                # required for credit card
+                number='4111111111111111',
+                cvv='900',
+                month='12',
+                year='2015',
+                address='123 Elm St.',
+                zip='12345',
+            )
+
+        This method also accepts ``gateway_name``.
+        """
         gateway = get_gateway(gateway_name)
         resp = gateway.create_customer(kwargs)
         return cls(gateway_name=gateway.name, **resp)
@@ -20,6 +38,10 @@ class Customer(DineroObject):
     @classmethod
     @log
     def retrieve(cls, customer_id, gateway_name=None):
+        """
+        Fetches a customer object from the gateway.  This optionally accepts a
+        ``gateway_name`` parameter.
+        """
         gateway = get_gateway(gateway_name)
         resp, cards = gateway.retrieve_customer(customer_id)
         # resp must have customer_id in it
@@ -43,6 +65,9 @@ class Customer(DineroObject):
 
     @log
     def save(self):
+        """
+        Saves changes to a customer object.
+        """
         if not self.customer_id:
             raise InvalidCustomerException("Cannot save a customer that doesn't have a customer_id")
         gateway = get_gateway(self.gateway_name)
@@ -51,6 +76,9 @@ class Customer(DineroObject):
 
     @log
     def delete(self):
+        """
+        Deletes a customer object from the gateway.
+        """
         if not self.customer_id:
             raise InvalidCustomerException("Cannot delete a customer that doesn't have a customer_id")
         gateway = get_gateway(self.gateway_name)
@@ -60,6 +88,19 @@ class Customer(DineroObject):
 
     @log
     def add_card(self, options, gateway_name=None):
+        """
+        The first credit card is added when you call :meth:`create`, but you
+        can add more cards using this method. ::
+
+            customer.add_card(
+                number='4222222222222',
+                cvv='900',
+                month='12'
+                year='2015'
+                address='123 Elm St',
+                zip='12345',
+            )
+        """
         if not self.customer_id:
             raise InvalidCustomerException("Cannot add a card to a customer that doesn't have a customer_id")
         gateway = get_gateway(gateway_name)

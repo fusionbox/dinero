@@ -1,7 +1,7 @@
 Transactions
 ------------
 
-.. currentmodule:: dinero.transaction
+.. currentmodule:: dinero
 
 Transaction objects contain data about payments.  Every transaction object has
 a ``transaction_id`` and a ``price``.
@@ -79,12 +79,12 @@ When you need to settle a transaction, you can call
 :meth:`Transaction.settle`::
 
     transaction = dinero.Transaction.create(
-            price=200,
-            number='4111111111111111',
-            month='12',
-            year='2015',
-            settle=False,
-        )
+        price=200,
+        number='4111111111111111',
+        month='12',
+        year='2015',
+        settle=False,
+    )
 
     ...
 

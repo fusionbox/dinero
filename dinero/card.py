@@ -4,6 +4,9 @@ from dinero.base import DineroObject
 
 
 class CreditCard(DineroObject):
+    """
+    A representation of a credit card to be stored in the gateway.
+    """
 
     def __init__(self, gateway_name, customer_id, **kwargs):
         self.gateway_name = gateway_name
@@ -12,11 +15,17 @@ class CreditCard(DineroObject):
 
     @log
     def save(self):
+        """
+        Save changes to a card to the gateway.
+        """
         gateway = get_gateway(self.gateway_name)
         gateway.update_card(self)
 
     @log
     def delete(self):
+        """
+        Delete a card from the gateway.
+        """
         gateway = get_gateway(self.gateway_name)
         gateway.delete_card(self)
         return True
