@@ -26,7 +26,7 @@ gateways(s).  The following example would be configuration for an Authorize.Net 
 
 Now that you have a gateway configured, you can create transactions. ::
 
-    transcation = dinero.Transaction.create(
+    transaction = dinero.Transaction.create(
         price=2000,
         number='4111111111111111',
         month='12',
