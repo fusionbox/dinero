@@ -11,7 +11,7 @@ except ImportError:
     LOGIN_ID = os.environ["AUTHNET_LOGIN_ID"]
     TRANSACTION_KEY = os.environ["AUTHNET_TRANSACTION_KEY"]
     dinero.configure({
-        'auth.net': {
+        'authorize.net': {
             'type': 'dinero.gateways.AuthorizeNet',
             'login_id': LOGIN_ID,
             'transaction_key': TRANSACTION_KEY,

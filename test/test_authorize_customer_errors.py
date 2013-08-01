@@ -1,4 +1,5 @@
 import os
+import uuid
 import dinero
 from dinero.exceptions import *
 
@@ -10,7 +11,7 @@ except ImportError:
     LOGIN_ID = os.environ["AUTHNET_LOGIN_ID"]
     TRANSACTION_KEY = os.environ["AUTHNET_TRANSACTION_KEY"]
     dinero.configure({
-        'auth.net': {
+        'authorize.net': {
             'type': 'dinero.gateways.AuthorizeNet',
             'login_id': LOGIN_ID,
             'transaction_key': TRANSACTION_KEY,
@@ -36,7 +37,7 @@ def test_create_customer_no_email_error():
 
 def test_create_customer_not_enough_payment_info_error():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
         'number': '4' + '1' * 14
     }
 

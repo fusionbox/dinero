@@ -1,4 +1,6 @@
 import os
+import uuid
+import datetime
 import dinero
 from dinero.exceptions import *
 
@@ -10,7 +12,7 @@ except ImportError:
     LOGIN_ID = os.environ["AUTHNET_LOGIN_ID"]
     TRANSACTION_KEY = os.environ["AUTHNET_TRANSACTION_KEY"]
     dinero.configure({
-        'auth.net': {
+        'authorize.net': {
             'type': 'dinero.gateways.AuthorizeNet',
             'login_id': LOGIN_ID,
             'transaction_key': TRANSACTION_KEY,
@@ -24,7 +26,7 @@ except ImportError:
 
 def test_create_delete_customer():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
 
         'first_name': 'Joey',
         'last_name': 'Shabadoo',
@@ -39,7 +41,7 @@ def test_create_delete_customer():
 
         'number': '4' + '1' * 15,
         'month': '12',
-        'year': '2012',
+        'year': str(datetime.date.today().year + 1),
     }
 
     customer = dinero.Customer.create(gateway_name='authorize.net', **options)
@@ -69,7 +71,7 @@ def test_retrieve_nonexistant_customer():
 
 def test_create_retrieve_delete_customer():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
 
         'first_name': 'Joey',
         'last_name': 'Shabadoo',
@@ -84,7 +86,7 @@ def test_create_retrieve_delete_customer():
 
         'number': '4' + '1' * 15,
         'month': '12',
-        'year': '2012',
+        'year': str(datetime.date.today().year + 1),
     }
 
     customer = dinero.Customer.create(gateway_name='authorize.net', **options)
@@ -94,7 +96,7 @@ def test_create_retrieve_delete_customer():
 
 def test_CRUD_customer():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
 
         'first_name': 'Joey',
         'last_name': 'Shabadoo',
@@ -109,7 +111,7 @@ def test_CRUD_customer():
 
         'number': '4' + '1' * 15,
         'month': '12',
-        'year': '2012',
+        'year': str(datetime.date.today().year + 1),
     }
     new_company = 'Joey Junior, Inc.'
 
@@ -127,7 +129,7 @@ def test_CRUD_customer():
 
 def test_create_customer_with_number_change():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
 
         'first_name': 'Joey',
         'last_name': 'Shabadoo',
@@ -142,12 +144,12 @@ def test_create_customer_with_number_change():
 
         'number': '4' + '1' * 15,
         'month': '12',
-        'year': '2012',
+        'year': str(datetime.date.today().year + 1),
     }
     new_company = 'Joey Junior, Inc.'
     new_number = '4' + '2' * 15
     new_last_4_test = '2222'
-    new_year = '2013'
+    new_year = str(datetime.date.today().year + 2)
     new_month = '11'
 
     customer = dinero.Customer.create(gateway_name='authorize.net', **options)
@@ -166,7 +168,7 @@ def test_create_customer_with_number_change():
 
 def test_CRUD_customer_with_number_change():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
 
         'first_name': 'Joey',
         'last_name': 'Shabadoo',
@@ -181,12 +183,12 @@ def test_CRUD_customer_with_number_change():
 
         'number': '4' + '1' * 15,
         'month': '12',
-        'year': '2012',
+        'year': str(datetime.date.today().year + 1),
     }
     new_company = 'Joey Junior, Inc.'
     new_number = '4' + '2' * 15
     new_last_4_test = '2222'
-    new_year = '2012'
+    new_year = str(datetime.date.today().year + 1)
     new_month = '12'
 
     customer = dinero.Customer.create(gateway_name='authorize.net', **options)
@@ -207,10 +209,10 @@ def test_CRUD_customer_with_number_change():
 
 def test_CRUD_customer_with_number_addition():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
     }
     number = '4' + '2' * 15
-    year = '2012'
+    year = str(datetime.date.today().year + 1)
     month = '12'
 
     customer = dinero.Customer.create(gateway_name='authorize.net', **options)

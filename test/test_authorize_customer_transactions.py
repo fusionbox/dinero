@@ -1,4 +1,6 @@
 import os
+import uuid
+import datetime
 import random
 import dinero
 from dinero.exceptions import *
@@ -11,7 +13,7 @@ except ImportError:
     LOGIN_ID = os.environ["AUTHNET_LOGIN_ID"]
     TRANSACTION_KEY = os.environ["AUTHNET_TRANSACTION_KEY"]
     dinero.configure({
-        'auth.net': {
+        'authorize.net': {
             'type': 'dinero.gateways.AuthorizeNet',
             'login_id': LOGIN_ID,
             'transaction_key': TRANSACTION_KEY,
@@ -25,10 +27,10 @@ except ImportError:
 
 def test_customer_transaction():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
         'number': '4' + '1' * 15,
         'month': '12',
-        'year': '2012',
+        'year': str(datetime.date.today().year + 1),
     }
     price = float(random.randint(1, 100000)) / 100
 
