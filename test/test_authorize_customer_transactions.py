@@ -1,10 +1,25 @@
+import os
+import uuid
+import datetime
 import random
 import dinero
 from dinero.exceptions import *
 
 ## These tests require that you provide settings for authorize.net and set up
 ## your account to reject invalid CVV and AVS responses
-import authorize_net_configuration
+try:
+    import authorize_net_configuration
+except ImportError:
+    LOGIN_ID = os.environ["AUTHNET_LOGIN_ID"]
+    TRANSACTION_KEY = os.environ["AUTHNET_TRANSACTION_KEY"]
+    dinero.configure({
+        'authorize.net': {
+            'type': 'dinero.gateways.AuthorizeNet',
+            'login_id': LOGIN_ID,
+            'transaction_key': TRANSACTION_KEY,
+            'default': True,
+        }
+    })
 
 
 ## For information on how to trigger specific errors, see http://community.developer.authorize.net/t5/Integration-and-Testing/Triggering-Specific-Transaction-Responses-Using-Test-Account/td-p/4361
@@ -12,10 +27,10 @@ import authorize_net_configuration
 
 def test_customer_transaction():
     options = {
-        'email': 'someone@fusionbox.com',
+        'email': '{0}@example.com'.format(uuid.uuid4()),
         'number': '4' + '1' * 15,
         'month': '12',
-        'year': '2012',
+        'year': str(datetime.date.today().year + 1),
     }
     price = float(random.randint(1, 100000)) / 100
 

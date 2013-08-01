@@ -1,0 +1,12 @@
+language: python
+python:
+- '2.7'
+- '2.6'
+install:
+- pip install pytest
+- python setup.py install
+script: py.test test
+env:
+  global:
+  - secure: dqz5GeC34d2WZCpvaeBOSdjv4gRZsqIZYvicdF/xeWft4FHFi3dTCed2jDTdQj3xUsE6nemWYWAgFM/f7ng0sLlE56dNqIwXRcpC7OYXKL/7lGQNuCDRVbDjMictvfVUohovugJx8KdaWj7abnh3AoDY4RpQ03sN2p17H06X6bo=
+  - secure: I4LxO7VHb33Zmla/OXcxbO61tfHQ8OyeolsQxyP1oKeyB3adOCymwW3ReDWu4MlHYcOansBVtpM4JLFRSmsWTrDl2UrOjYASijtpcvF+P82b1Fv0Ln8WuVoMyXqnXgFntjfMNvpw+K3cIfWWnZHXPODGxoaxTjnIsnenN9j6kzM=
