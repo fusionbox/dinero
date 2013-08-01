@@ -173,6 +173,8 @@ RESPONSE_CODE_EXCEPTION_MAP = {
         '44': [CVVError],
         }
 
+INVALID_AUTHENTICATION_ERROR_CODE = 'E00007'
+
 
 def payment_exception_factory(errors):
     exceptions = []
@@ -194,24 +196,37 @@ class AuthorizeNet(Gateway):
         self.login_id = options['login_id']
         self.transaction_key = options['transaction_key']
 
-        self.url = self.test_url
+    _url = None
 
-        # Auto-discover if this is a real account or a developer account.  Tries
-        # to access both end points and see which one works.
-        try:
-            self.retrieve('0')
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00007':  # PermissionDenied
-                self.url = self.live_url
-                try:
-                    self.retrieve('0')
-                except GatewayException as e:
-                    error_code = e.args[0][0][0]
-                    if error_code != 'E00040' and error_code != 'E00011':
-                        raise
-            elif error_code != 'E00040' and error_code != 'E00011':
-                raise
+    @property
+    def url(self):
+        if not self._url:
+            # Auto-discover if this is a real account or a developer account.  Tries
+            # to access both end points and see which one works.
+            self._url = self.test_url
+            try:
+                # 0 is an invalid transaction ID.  This should raise an
+                # InvalidTransactionError.
+                self._void('0')
+            except PaymentException as e:
+                if InvalidTransactionError not in e:
+                    raise
+            except GatewayException as e:
+                error_code = e.args[0][0][0]
+                if error_code == INVALID_AUTHENTICATION_ERROR_CODE:
+                    self._url = self.live_url
+                    try:
+                        self._void('0')
+                    except PaymentException as e:
+                        if InvalidTransactionError not in e:
+                            raise
+                else:
+                    raise
+        return self._url
+
+    @url.setter
+    def url(self, value):
+        self._url = value
 
     def build_xml(self, root_name, root):
         root.insert(0, 'merchantAuthentication', OrderedDict([
@@ -483,12 +498,15 @@ class AuthorizeNet(Gateway):
         return self._resp_to_transaction_dict(resp['transaction'], resp['transaction']['authAmount'])
 
     def void(self, transaction):
+        return self._void(transaction.transaction_id)
+
+    def _void(self, transaction_id):
         xml = self.build_xml('createTransactionRequest', OrderedDict([
             ('transactionRequest', OrderedDict([
                 ('transactionType', 'voidTransaction'),
-                ('refTransId', transaction.transaction_id),
-                ])),
-            ]))
+                ('refTransId', transaction_id),
+            ])),
+        ]))
 
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
