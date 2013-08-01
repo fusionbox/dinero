@@ -1,3 +1,4 @@
+import os
 import dinero
 from dinero.exceptions import *
 from lxml import etree
