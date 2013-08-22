@@ -185,8 +185,8 @@ Like this::
 TESTING
 -------
 
+Write and .env file.
+
 ::
 
-    $ pip install pytest
-        ...
-    $ py.test
+    $ python setup.py test

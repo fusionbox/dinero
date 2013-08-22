@@ -8,48 +8,53 @@ import dinero
 
 
 barebones = ("<root><a>b</a></root>", OrderedDict([('a', 'b')]))
+
 simple = (
-                """
-                <root>
-                  <x>
-                    <a>Text</a>
-                    <b>Something Else</b>
-                  </x>
-                </root>
-                """,
+    """
+    <root>
+      <x>
+        <a>Text</a>
+        <b>Something Else</b>
+      </x>
+    </root>
+    """,
+    OrderedDict([
+        ('x', OrderedDict([
+            ('a', 'Text'),
+            ('b', 'Something Else'),
+        ])),
+    ])
+)
+
+list_example = (
+    """
+    <root>
+      <messages>
+        <message>1</message>
+        <message>2</message>
+        <message>3</message>
+        <message>
+          <a>Text</a>
+        </message>
+      </messages>
+    </root>
+    """,
+    OrderedDict([
+        ('messages', OrderedDict([
+            ('message', [
+                '1',
+                '2',
+                '3',
                 OrderedDict([
-                    ('x', OrderedDict([
-                        ('a', 'Text'),
-                        ('b', 'Something Else'),
-                        ])),
-                    ])
-                )
-list_example = ("""
-                <root>
-                  <messages>
-                    <message>1</message>
-                    <message>2</message>
-                    <message>3</message>
-                    <message>
-                      <a>Text</a>
-                    </message>
-                  </messages>
-                </root>
-                """,
-                OrderedDict([
-                    ('messages', OrderedDict([
-                        ('message', [
-                            '1',
-                            '2',
-                            '3',
-                            OrderedDict([
-                                ('a', 'Text'),
-                                ]),
-                            ]),
-                        ])),
-                    ])
-                )
-comprehensive = ("""
+                    ('a', 'Text'),
+                ]),
+            ]),
+        ])),
+    ])
+)
+
+comprehensive = (
+    """
     <createTransactionResponse>
       <messages>
         <resultCode>Error</resultCode>
@@ -86,10 +91,10 @@ comprehensive = ("""
                 OrderedDict([
                     ('code', 'E00027'),
                     ('text', 'The transaction was unsuccessful.'),
-                    ]),
                 ]),
             ]),
-            ),
+        ]),
+        ),
         ('transactionResponse', OrderedDict([
             ('responseCode', '3'),
             ('authCode', ''),
@@ -107,13 +112,13 @@ comprehensive = ("""
                     OrderedDict([
                         ('errorCode', '8'),
                         ('errorText', 'The credit card has expired.'),
-                        ]),
-                    ])
-                ]),
-                ),
-            ])),
-        ])
-    )
+                    ]),
+                ])
+            ]),
+            ),
+        ])),
+    ])
+)
 
 
 class TestXmlToDict(unittest.TestCase):
@@ -146,26 +151,24 @@ class TestDictToXml(unittest.TestCase):
         actual = dinero.gateways.authorizenet_gateway._dict_to_xml(root, dict)
 
         assert etree.tostring(actual, pretty_print=True) == \
-                etree.tostring(xml, pretty_print=True)
+            etree.tostring(xml, pretty_print=True)
 
     def test_barebones(self):
-        self._test(*(barebones + ('root',)))
+        self._test(root='root', *barebones)
 
     def test_none_is_no_element(self):
         self._test(
-                "<root></root>",
-                OrderedDict([
-                    ('whatever', None),
-                    ]),
-                'root')
+            "<root></root>",
+            OrderedDict([
+                ('whatever', None),
+            ]),
+            root='root')
 
     def test_simple(self):
-        self._test(*(simple + ('root',)))
+        self._test(root='root', *simple)
 
     def test_list(self):
-        self._test(*(list_example + ('root',)))
+        self._test(root='root', *list_example)
 
     def test_comprehensive(self):
-        self._test(*(comprehensive + ('createTransactionResponse',)))
-
-
+        self._test(root='createTransactionResponse', *comprehensive)
