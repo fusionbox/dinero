@@ -39,11 +39,11 @@ you can later retrieve the transaction object. ::
             'new-auth.net': {
                 'type': 'dinero.gateways.AuthorizeNet',
                 'default': True,
-                ...
+                # ...
             },
             'old-auth.net': {
                 'type': 'dinero.gateways.AuthorizeNet',
-                ...
+                # ...
             },
         })
 
@@ -54,7 +54,7 @@ you can later retrieve the transaction object. ::
         dinero.Transaction.create(
             gateway_name='old-auth.net',
             price=200,
-            ...
+            # ...
         )
 
 
@@ -86,19 +86,9 @@ When you need to settle a transaction, you can call
         settle=False,
     )
 
-    ...
+    # ...
 
     transaction.settle()
 
 If you need to cancel a transaction instead of settling it, just call
 :meth:`Transaction.refund`.
-
-API
-===
-
-.. autoclass:: Transaction
-
-    .. automethod:: create(price, **kwargs)
-    .. automethod:: retrieve(transaction_id[, gateway_name=None])
-    .. automethod:: refund([amount=None])
-    .. automethod:: settle([amount=None])

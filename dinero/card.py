@@ -13,6 +13,22 @@ class CreditCard(DineroObject):
         self.customer_id = customer_id
         self.data = kwargs
 
+    def __setattr__(self, attr, val):
+        if attr in ['customer_id', 'data', 'gateway_name']:
+            self.__dict__[attr] = val
+        else:
+            self.data[attr] = val
+
+    def __repr__(self):
+        return "CreditCard(({customer_id!r}, **{data!r})".format(**self.to_dict())
+
+    @classmethod
+    def from_dict(cls, dict):
+        return cls(dict['gateway_name'],
+                   dict['customer_id'],
+                   **dict['data']
+                   )
+
     @log
     def save(self):
         """
@@ -29,19 +45,3 @@ class CreditCard(DineroObject):
         gateway = get_gateway(self.gateway_name)
         gateway.delete_card(self)
         return True
-
-    def __setattr__(self, attr, val):
-        if attr in ['customer_id', 'data', 'gateway_name']:
-            self.__dict__[attr] = val
-        else:
-            self.data[attr] = val
-
-    @classmethod
-    def from_dict(cls, dict):
-        return cls(dict['gateway_name'],
-                   dict['customer_id'],
-                   **dict['data']
-                   )
-
-    def __repr__(self):
-        return "CreditCard(({customer_id!r}, **{data!r})".format(**self.to_dict())

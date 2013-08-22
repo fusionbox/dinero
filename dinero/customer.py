@@ -7,29 +7,41 @@ from dinero.base import DineroObject
 
 class Customer(DineroObject):
     """
-    A :class:`Customer` object stores information about your customers.
+    A Customer object stores information about your customers.
     """
+
+    def __init__(self, gateway_name, customer_id, **kwargs):
+        self.gateway_name = gateway_name
+        self.customer_id = customer_id
+        self.data = kwargs
+        self.data['cards'] = []
+
+    def __setattr__(self, attr, val):
+        if attr in ['gateway_name', 'customer_id', 'data']:
+            self.__dict__[attr] = val
+        else:
+            self.data[attr] = val
+
+    def __repr__(self):
+        return "Customer({gateway_name!r}, {customer_id!r}, **{data!r})".format(**self.to_dict())
+
+    @classmethod
+    def from_dict(cls, dict):
+        return cls(dict['gateway_name'],
+                   dict['customer_id'],
+                   **dict['data']
+                   )
+
+    def update(self, options):
+        for key, value in options.iteritems():
+            setattr(self, key, value)
 
     @classmethod
     @log
     def create(cls, gateway_name=None, **kwargs):
         """
-        Creates and stores a customer object.  When you first create a
-        customer, you are required to also pass in arguments for a credit card. ::
-
-            Customer.create(
-                email='bill@example.com',
-
-                # required for credit card
-                number='4111111111111111',
-                cvv='900',
-                month='12',
-                year='2015',
-                address='123 Elm St.',
-                zip='12345',
-            )
-
-        This method also accepts ``gateway_name``.
+        Creates a customer.  You are required to include payment information
+        when you create a customer.
         """
         gateway = get_gateway(gateway_name)
         resp = gateway.create_customer(kwargs)
@@ -39,8 +51,7 @@ class Customer(DineroObject):
     @log
     def retrieve(cls, customer_id, gateway_name=None):
         """
-        Fetches a customer object from the gateway.  This optionally accepts a
-        ``gateway_name`` parameter.
+        Fetches a customer object from the gateway.
         """
         gateway = get_gateway(gateway_name)
         resp, cards = gateway.retrieve_customer(customer_id)
@@ -52,16 +63,6 @@ class Customer(DineroObject):
                 **card
                 ))
         return customer
-
-    def __init__(self, gateway_name, customer_id, **kwargs):
-        self.gateway_name = gateway_name
-        self.customer_id = customer_id
-        self.data = kwargs
-        self.data['cards'] = []
-
-    def update(self, options):
-        for key, value in options.iteritems():
-            setattr(self, key, value)
 
     @log
     def save(self):
@@ -89,17 +90,7 @@ class Customer(DineroObject):
     @log
     def add_card(self, options, gateway_name=None):
         """
-        The first credit card is added when you call :meth:`create`, but you
-        can add more cards using this method. ::
-
-            customer.add_card(
-                number='4222222222222',
-                cvv='900',
-                month='12'
-                year='2015'
-                address='123 Elm St',
-                zip='12345',
-            )
+        Interface for storing a CreditCard.
         """
         if not self.customer_id:
             raise InvalidCustomerException("Cannot add a card to a customer that doesn't have a customer_id")
@@ -108,19 +99,3 @@ class Customer(DineroObject):
         card = CreditCard(gateway_name=self.gateway_name, **resp)
         self.cards.append(card)
         return card
-
-    def __setattr__(self, attr, val):
-        if attr in ['gateway_name', 'customer_id', 'data']:
-            self.__dict__[attr] = val
-        else:
-            self.data[attr] = val
-
-    @classmethod
-    def from_dict(cls, dict):
-        return cls(dict['gateway_name'],
-                   dict['customer_id'],
-                   **dict['data']
-                   )
-
-    def __repr__(self):
-        return "Customer({gateway_name!r}, {customer_id!r}, **{data!r})".format(**self.to_dict())
