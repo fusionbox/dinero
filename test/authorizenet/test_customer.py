@@ -1,24 +1,8 @@
-import os
 import uuid
 import datetime
-import dinero
-from dinero.exceptions import *
 
-## These tests require that you provide settings for authorize.net and set up
-## your account to reject invalid CVV and AVS responses
-try:
-    import authorize_net_configuration
-except ImportError:
-    LOGIN_ID = os.environ["AUTHNET_LOGIN_ID"]
-    TRANSACTION_KEY = os.environ["AUTHNET_TRANSACTION_KEY"]
-    dinero.configure({
-        'authorize.net': {
-            'type': 'dinero.gateways.AuthorizeNet',
-            'login_id': LOGIN_ID,
-            'transaction_key': TRANSACTION_KEY,
-            'default': True,
-        }
-    })
+import dinero
+from dinero.exceptions import CustomerNotFoundError
 
 
 ## For information on how to trigger specific errors, see http://community.developer.authorize.net/t5/Integration-and-Testing/Triggering-Specific-Transaction-Responses-Using-Test-Account/td-p/4361
