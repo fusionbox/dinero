@@ -6,7 +6,7 @@ from braintree.exceptions import (
     )
 
 from dinero.exceptions import *
-from dinero.gateways.base import Gateway
+from dinero.gateways.base import BaseGateway
 
 
 # CVV RESPONSES
@@ -278,7 +278,7 @@ def check_for_errors(result):
         raise PaymentException(flattened_errors)
 
 
-class Braintree(Gateway):
+class Gateway(BaseGateway):
     def __init__(self, options):
         environment = braintree.Environment.Sandbox  # TODO: autodetect live vs. test
 

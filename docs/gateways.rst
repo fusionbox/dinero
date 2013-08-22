@@ -20,13 +20,13 @@ In order to use dinero, you must first configure a gateway.  The basic configura
 where ``foo`` is a reference name for you to remember.  The ``type`` is the
 class that implements the gateway.  Dinero currently has the following gateway types:
 
-- :class:`dinero.gateways.AuthorizeNet`
+- :class:`dinero.gateways.authorizenet.Gateway`
 - :class:`dinero.gateways.Braintree` (incomplete implementation)
 
 The gateway marked ``default`` will be used by default when creating transactions.
 
 
-.. py:class:: dinero.gateways.AuthorizeNet
+.. py:class:: dinero.gateways.authorizenet.Gateway
 
 The Authorize.Net gateway requires the following packages.
 
@@ -40,7 +40,7 @@ Transaction Key. ::
 
     dinero.configure({
         'foo': {
-            'type': 'dinero.gateways.AuthorizeNet',
+            'type': 'dinero.gateways.authorizenet.Gateway',
             'default': True,
             'login_id': 'XXX',
             'transaction_key': 'XXX',

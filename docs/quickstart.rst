@@ -12,7 +12,7 @@ gateways(s).  The following example would be configuration for an Authorize.Net 
     dinero.configure({
         # a name that you can remember
         'auth.net': {
-            'type': 'dinero.gateways.AuthorizeNet',
+            'type': 'dinero.gateways.authorizenet.Gateway',
             'default': True,
             # Gateway specific configuration
             'login_id': 'XXX',

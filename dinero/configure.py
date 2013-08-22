@@ -3,8 +3,8 @@
 def fancy_import(import_name):
     """
     This takes a fully qualified object name, like
-    'dinero.gateways.AuthorizeNet', and turns it into the
-    dinero.gateways.AuthorizeNet object.
+    'dinero.gateways.authorizenet.Gateway', and turns it into the
+    dinero.gateways.authorizenet.Gateway object.
     """
     import_path, import_me = import_name.rsplit('.', 1)
     imported = __import__(import_path, globals(), locals(), [import_me], -1)
@@ -20,14 +20,20 @@ def configure(options):
     configure({
         'auth.net': { # the name for this gateway
             'default': True, # register as the default gateway
-            'type': 'dinero.gateways.AuthorizeNet' # the gateway path
+            'type': 'dinero.gateways.authorizenet.Gateway' # the gateway path
             # ... gateway-specific configuration
         }})
 
     `settings.py` is a great place to put this call in a Django project.
     """
     for name, conf in options.iteritems():
-        _configured_gateways[name] = fancy_import(conf['type'])(conf)
+        backend = conf['type']
+        # BBB: <= 0.0.3 import paths
+        if backend == 'dinero.gateways.AuthorizeNet':
+            backend = 'dinero.gateways.authorizenet.Gateway'
+        if backend == 'dinero.gateways.Braintree':
+            backend = 'dinero.gateways.braintree.Gateway'
+        _configured_gateways[name] = fancy_import(backend)(conf)
         _configured_gateways[name].name = name
         is_default = conf.get('default', False)
         if is_default:

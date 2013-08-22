@@ -8,7 +8,7 @@ TRANSACTION_KEY = os.environ["AUTHNET_TRANSACTION_KEY"]
 
 dinero.configure({
     'authorize.net': {
-        'type': 'dinero.gateways.AuthorizeNet',
+        'type': 'dinero.gateways.authorizenet.Gateway',
         'login_id': LOGIN_ID,
         'transaction_key': TRANSACTION_KEY,
         'default': True,

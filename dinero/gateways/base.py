@@ -1,4 +1,4 @@
-class Gateway(object):
+class BaseGateway(object):
     """
     Implemented payment gateways should implement this interface.
     """

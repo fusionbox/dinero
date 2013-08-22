@@ -67,7 +67,7 @@ class Transaction(DineroObject):
         """
         gateway = get_gateway(self.gateway_name)
 
-        # TODO: can this implementation live in dinero.gateways.AuthorizeNet?
+        # TODO: can this implementation live in dinero.gateways.authorizenet.Gateway?
         try:
             return gateway.refund(self, amount or self.price)
         except exceptions.PaymentException:

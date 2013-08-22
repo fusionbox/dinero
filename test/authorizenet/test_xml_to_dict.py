@@ -3,8 +3,7 @@ import unittest
 from pprint import pprint
 
 from dinero.ordereddict import OrderedDict
-
-import dinero
+from dinero.gateways.authorizenet import xml_to_dict, _dict_to_xml
 
 
 barebones = ("<root><a>b</a></root>", OrderedDict([('a', 'b')]))
@@ -124,7 +123,7 @@ comprehensive = (
 class TestXmlToDict(unittest.TestCase):
     def _test(self, xml, should):
         xml = etree.XML(xml)
-        actual = dinero.gateways.authorizenet_gateway.xml_to_dict(xml)
+        actual = xml_to_dict(xml)
 
         if actual != should:
             pprint(actual)
@@ -148,7 +147,7 @@ class TestDictToXml(unittest.TestCase):
     def _test(self, should, dict, root):
         import textwrap
         xml = etree.XML(textwrap.dedent(should))
-        actual = dinero.gateways.authorizenet_gateway._dict_to_xml(root, dict)
+        actual = _dict_to_xml(root, dict)
 
         assert etree.tostring(actual, pretty_print=True) == \
             etree.tostring(xml, pretty_print=True)

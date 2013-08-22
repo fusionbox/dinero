@@ -5,7 +5,7 @@ from lxml import etree
 
 from dinero.ordereddict import OrderedDict
 from dinero.exceptions import *
-from dinero.gateways.base import Gateway
+from dinero.gateways.base import BaseGateway
 
 from datetime import date
 
@@ -187,7 +187,7 @@ def payment_exception_factory(errors):
     return exceptions
 
 
-class AuthorizeNet(Gateway):
+class Gateway(BaseGateway):
     ns = 'AnetApi/xml/v1/schema/AnetApiSchema.xsd'
     live_url = 'https://api.authorize.net/xml/v1/request.api'
     test_url = 'https://apitest.authorize.net/xml/v1/request.api'

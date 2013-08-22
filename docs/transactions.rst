@@ -37,12 +37,12 @@ you can later retrieve the transaction object. ::
         import dinero
         dinero.configure({
             'new-auth.net': {
-                'type': 'dinero.gateways.AuthorizeNet',
+                'type': 'dinero.gateways.authorizenet.Gateway',
                 'default': True,
                 # ...
             },
             'old-auth.net': {
-                'type': 'dinero.gateways.AuthorizeNet',
+                'type': 'dinero.gateways.authorizenet.Gateway',
                 # ...
             },
         })
