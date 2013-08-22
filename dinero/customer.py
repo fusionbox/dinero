@@ -61,7 +61,7 @@ class Customer(DineroObject):
             customer.cards.append(CreditCard(
                 gateway_name=gateway.name,
                 **card
-                ))
+            ))
         return customer
 
     @log

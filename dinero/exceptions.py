@@ -1,6 +1,7 @@
 class DineroException(Exception):
     pass
 
+
 class GatewayException(DineroException):
     """
     Exceptions resulting from malformed requests to the gateway.  For example,
@@ -8,6 +9,7 @@ class GatewayException(DineroException):
     malformed data.
     """
     pass
+
 
 class PaymentException(DineroException):
     """
@@ -39,32 +41,42 @@ class PaymentError(DineroException):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.args[0])
 
+
 class VerificationError(PaymentError):
     pass
+
 
 class CVVError(VerificationError):
     pass
 
+
 class AVSError(VerificationError):
     pass
+
 
 class InvalidCardError(PaymentError):
     pass
 
+
 class InvalidAmountError(PaymentError):
     pass
+
 
 class ExpiryError(PaymentError):
     pass
 
+
 class CardDeclinedError(PaymentError):
     pass
+
 
 class DuplicateTransactionError(PaymentError):
     pass
 
+
 class RefundError(PaymentError):
     pass
+
 
 class InvalidTransactionError(PaymentError):
     pass

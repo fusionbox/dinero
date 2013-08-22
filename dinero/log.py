@@ -46,10 +46,10 @@ def log(fn):
 
             end_time = time.time()
             message = '%s(%s) took %s seconds%s' % (
-                    fn.__name__,
-                    args_kwargs_to_call(args, kwargs),
-                    end_time - start_time,
-                    exception_message)
+                fn.__name__,
+                args_kwargs_to_call(args, kwargs),
+                end_time - start_time,
+                exception_message)
             # remove any credit card numbers
             message = re.sub(r"\b([0-9])[0-9- ]{9,16}([0-9]{4})\b", r'\1XXXXXXXXX\2', message)
             logger.info(message)
