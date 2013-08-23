@@ -4,3 +4,6 @@ build/
 *.pyc
 test/.env
 doc/_build
+.coverage
+htmlcov/
+tmp/

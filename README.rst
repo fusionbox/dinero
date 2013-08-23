@@ -207,3 +207,10 @@ The tests require ``py.test`` and ``django-dotenv``.
     -  Transaction Details API enabled
     -  Decline E and N Address Verification failures
     -  Decline all CCV failures
+
+Coverage
+~~~~~~~~
+
+To test the coverage, run::
+
+    $ make coverage
