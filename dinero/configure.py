@@ -31,15 +31,13 @@ def configure(options):
         # BBB: <= 0.0.3 import paths
         if backend == 'dinero.gateways.AuthorizeNet':
             backend = 'dinero.gateways.authorizenet.Gateway'
-        if backend == 'dinero.gateways.Braintree':
-            backend = 'dinero.gateways.braintree.Gateway'
         _configured_gateways[name] = fancy_import(backend)(conf)
         _configured_gateways[name].name = name
         is_default = conf.get('default', False)
         if is_default:
-            for gateway in _configured_gateways.itervalues():
-                gateway.default = False
-        _configured_gateways[name].default = is_default
+            set_default_gateway(name)
+        else:
+            _configured_gateways[name].default = is_default
 
 
 def get_gateway(gateway_name=None):
