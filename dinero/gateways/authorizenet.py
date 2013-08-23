@@ -4,7 +4,7 @@ import requests
 from lxml import etree
 
 from dinero.ordereddict import OrderedDict
-from dinero.exceptions import *
+from dinero import exceptions
 from dinero.gateways.base import BaseGateway
 
 from datetime import date
@@ -59,11 +59,11 @@ AVS_ADDRESS_SUCCESSFUL_RESPONSES = [
 
 def xml_post(url, obj):
     resp = requests.post(
-            url,
-            data=etree.tostring(obj),
-            headers={'content-type': 'application/xml'},
-            verify=True,
-            )
+        url,
+        data=etree.tostring(obj),
+        headers={'content-type': 'application/xml'},
+        verify=True,
+    )
 
     content = resp.content
     if isinstance(content, unicode) and content[0] == u'\ufeff':
@@ -77,8 +77,11 @@ def prepare_number(number):
     return re.sub('[^0-9Xx]', '', number)
 
 
-def handle_value(root, key, value):
-    if value is not None:
+def _convert_value_to_xml(root, key, value):
+    if isinstance(value, list):
+        for v in value:
+            _convert_value_to_xml(root, key, v)
+    elif value is not None:
         sub = etree.SubElement(root, key)
 
         if isinstance(value, dict):
@@ -98,11 +101,7 @@ def _dict_to_xml(root, dictionary, ns=None):
         root = etree.Element(root, nsmap=nsmap)
 
     for key, value in dictionary.iteritems():
-        if isinstance(value, list):
-            for item in value:
-                handle_value(root, key, item)
-        else:
-            handle_value(root, key, value)
+        _convert_value_to_xml(root, key, value)
 
     return root
 
@@ -150,6 +149,7 @@ def dotted_get(dict, key):
             return None
     return dict
 
+
 def get_first_of(dict, possibilities, default=None):
     for i in possibilities:
         if i in dict:
@@ -159,21 +159,26 @@ def get_first_of(dict, possibilities, default=None):
 
 
 RESPONSE_CODE_EXCEPTION_MAP = {
-        '8':  [ExpiryError],
-        '6':  [InvalidCardError],
-        '37': [InvalidCardError],
-        '5':  [InvalidAmountError],
-        '27': [AVSError],
-        '65': [CVVError],
-        '45': [AVSError, CVVError],
-        '2':  [CardDeclinedError],
-        '11': [DuplicateTransactionError],
-        '54': [RefundError],
-        '33': [InvalidTransactionError],
-        '44': [CVVError],
-        }
+    '8': [exceptions.ExpiryError],
+    '6': [exceptions.InvalidCardError],
+    '37': [exceptions.InvalidCardError],
+    '5': [exceptions.InvalidAmountError],
+    '27': [exceptions.AVSError],
+    '65': [exceptions.CVVError],
+    '45': [exceptions.AVSError, exceptions.CVVError],
+    '2': [exceptions.CardDeclinedError],
+    '11': [exceptions.DuplicateTransactionError],
+    '54': [exceptions.RefundError],
+    '33': [exceptions.InvalidTransactionError],
+    '44': [exceptions.CVVError],
+}
 
-INVALID_AUTHENTICATION_ERROR_CODE = 'E00007'
+GATEWAY_ERROR_MAP = {
+    'E00007': exceptions.AuthenticationError,
+    # XXX: Should this be an ExpiryError?
+    'E00013': exceptions.InvalidCardError,
+    'E00040': exceptions.CustomerNotFoundError,
+}
 
 
 def payment_exception_factory(errors):
@@ -206,52 +211,68 @@ class Gateway(BaseGateway):
             self._url = self.test_url
             try:
                 # 0 is an invalid transaction ID.  This should raise an
-                # InvalidTransactionError.
+                # InvalidTransactionError.  In this case
+                # InvalidTransactionError is a success.
                 self._void('0')
-            except PaymentException as e:
-                if InvalidTransactionError not in e:
+            except exceptions.PaymentException as e:
+                if exceptions.InvalidTransactionError not in e:
                     raise
-            except GatewayException as e:
-                error_code = e.args[0][0][0]
-                if error_code == INVALID_AUTHENTICATION_ERROR_CODE:
-                    self._url = self.live_url
-                    try:
-                        self._void('0')
-                    except PaymentException as e:
-                        if InvalidTransactionError not in e:
-                            raise
-                else:
-                    raise
+            except exceptions.AuthenticationError as e:
+                self._url = self.live_url
+                try:
+                    self._void('0')
+                except exceptions.PaymentException as e:
+                    if exceptions.InvalidTransactionError not in e:
+                        raise
         return self._url
 
-    @url.setter
+    @url.setter  # NOQA
     def url(self, value):
         self._url = value
 
     def build_xml(self, root_name, root):
         root.insert(0, 'merchantAuthentication', OrderedDict([
-                ('name', self.login_id),
-                ('transactionKey', self.transaction_key),
-                ]))
+            ('name', self.login_id),
+            ('transactionKey', self.transaction_key),
+        ]))
 
         return _dict_to_xml(root_name, root, self.ns)
 
     def check_for_error(self, resp):
-        if resp['messages']['resultCode'] == 'Error':
-            if 'transactionResponse' in resp:
-                raise PaymentException(payment_exception_factory([(errors['errorCode'], errors['errorText'])
-                                                                  for errors in resp['transactionResponse']['errors']['error']]))
+        if 'transactionResponse' in resp:
+            # Sometimes there are errors even if the resultCode is Successful.
+            try:
+                errors = [(error['errorCode'], error['errorText'])
+                          for error in resp['transactionResponse']['errors']['error']]
+            except KeyError:
+                pass
             else:
-                raise GatewayException([(message['code'], message['text'])
-                                        for message in resp['messages']['message']])
+                raise exceptions.PaymentException(payment_exception_factory(errors))
+        elif resp['messages']['resultCode'] == 'Error':
+            errors = [(message['code'], message['text'])
+                      for message in resp['messages']['message']]
 
-        # Sometimes Authorize.net is confused and returns errors even though it
-        # says that the request was Successful!
-        try:
-            raise PaymentException(payment_exception_factory([(errors['errorCode'], errors['errorText'])
-                                                              for errors in resp['transactionResponse']['errors']['error']]))
-        except KeyError:
-            pass
+            # Check if we can make these errors more meaningful
+            for code, text in errors:
+                # The E00039 error code is ambiguous, so we have to handle it
+                # specially.
+                # XXX: what is the best way to determine whether it's a
+                # DuplicateCardError or a DuplicateCustomerError?
+                if code == 'E00039':
+                    if 'payment profile' in text:
+                        raise exceptions.DuplicateCardError(text)
+                    else:
+                        customer_match = re.search(r'^A duplicate record with ID (.*) already exists.$', text)
+                        customer_id = None
+                        if customer_match:
+                            customer_id = customer_match.group(1)
+                        raise exceptions.DuplicateCustomerError(text, customer_id=customer_id)
+                try:
+                    raise GATEWAY_ERROR_MAP[code](text)
+                except KeyError:
+                    pass
+
+            raise exceptions.GatewayException(errors)
 
     ##|
     ##|  XML BUILDERS
@@ -263,9 +284,9 @@ class Gateway(BaseGateway):
             txn_type = 'authOnlyTransaction'
 
         transaction_xml = OrderedDict([
-                ('transactionType', txn_type),
-                ('amount', price),
-            ])
+            ('transactionType', txn_type),
+            ('amount', price),
+        ])
         payment = self._payment_xml(options)
         if payment:
             transaction_xml['payment'] = payment
@@ -280,22 +301,22 @@ class Gateway(BaseGateway):
         billto = self._billto_xml(options)
         if billto:
             transaction_xml['billTo'] = billto
-        transaction_xml['transactionSettings'] = OrderedDict([
-                    ('setting', [
-                        OrderedDict([
-                            ('settingName', 'duplicateWindow'),
-                            ('settingValue', 0),
-                            ]),
-                        OrderedDict([
-                            ('settingName', 'testRequest'),
-                            ('settingValue', 'false'),
-                            ]),
-                        ],)
-                    ])
+            transaction_xml['transactionSettings'] = OrderedDict([
+                ('setting', [
+                    OrderedDict([
+                        ('settingName', 'duplicateWindow'),
+                        ('settingValue', 0),
+                    ]),
+                    OrderedDict([
+                        ('settingName', 'testRequest'),
+                        ('settingValue', 'false'),
+                    ]),
+                ],)
+            ])
 
         xml = self.build_xml('createTransactionRequest', OrderedDict([
             ('transactionRequest', transaction_xml,),
-            ]))
+        ]))
         return xml
 
     def _payment_xml(self, options):
@@ -314,11 +335,10 @@ class Gateway(BaseGateway):
                 ('cardNumber', prepare_number(options['number'])),
                 ('expirationDate', expiry),
                 ('cardCode', options.get('cvv')),
-                ])),
-            ])
-        if any(val != None for val in payment_xml.values()):
+            ])),
+        ])
+        if any(val is not None for val in payment_xml.values()):
             return payment_xml
-        return None
 
     def _billto_xml(self, options):
         billto_xml = OrderedDict([
@@ -332,18 +352,17 @@ class Gateway(BaseGateway):
             ('country', options.get('country')),
             ('phoneNumber', options.get('phone')),
             ('faxNumber', options.get('fax')),
-            ])
-        if any(val != None for val in billto_xml.values()):
+        ])
+        if any(val is not None for val in billto_xml.values()):
             return billto_xml
-        return None
 
     def _simple_customer_xml(self, options):
         if not ('customer_id' in options or 'email' in options):
             return None
         return OrderedDict([
-                ('id', options.get('customer_id')),
-                ('email', options.get('email')),
-                ])
+            ('id', options.get('customer_id')),
+            ('email', options.get('email')),
+        ])
 
     def _create_customer_xml(self, options):
         # include <billTo> and <payment> fields only if
@@ -361,7 +380,7 @@ class Gateway(BaseGateway):
             'country',
             'phone',
             'fax',
-            ]
+        ]
         if any(field in options for field in billto_fields):
             billto = ('billTo', self._billto_xml(options))
         else:
@@ -388,15 +407,16 @@ class Gateway(BaseGateway):
             stuff.append(payment_profiles)
         root = OrderedDict([
             ('profile', OrderedDict(stuff)),
-            ])
+        ])
         return self.build_xml('createCustomerProfileRequest', root)
 
     def _update_customer_xml(self, customer_id, options):
-        stuff = [('email', options['email']), ('customerProfileId', customer_id)]
-
         root = OrderedDict([
-            ('profile', OrderedDict(stuff)),
-            ])
+            ('profile', OrderedDict([
+                ('email', options['email']),
+                ('customerProfileId', customer_id),
+            ])),
+        ])
         return self.build_xml('updateCustomerProfileRequest', root)
 
     def _charge_customer_xml(self, customer_id, card_id, price, options):
@@ -406,27 +426,29 @@ class Gateway(BaseGateway):
             txn_type = 'profileTransAuthOnly'
 
         return self.build_xml('createCustomerProfileTransactionRequest', OrderedDict([
-                ('transaction', OrderedDict([
-                    (txn_type, OrderedDict([
-                        ('amount', price),
-                        ('customerProfileId', customer_id),
-                        ('customerPaymentProfileId', card_id),
-                        ('cardCode', options.get('cvv')),
-                    ])),
-                ]))
+            ('transaction', OrderedDict([
+                (txn_type, OrderedDict([
+                    ('amount', price),
+                    ('customerProfileId', customer_id),
+                    ('customerPaymentProfileId', card_id),
+                    ('cardCode', options.get('cvv')),
+                ])),
             ]))
+        ]))
+
+    # XML to Python
 
     def _resp_to_transaction_dict(self, resp, price):
         ret = {
-                'price': price,
-                'transaction_id': resp['transId'],
-                'avs_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_SUCCESSFUL_RESPONSES,
-                'cvv_successful': get_first_of(resp, ['cvvResultCode', 'cardCodeResponse']) in CVV_SUCCESSFUL_RESPONSES,
-                'avs_zip_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ZIP_SUCCESSFUL_RESPONSES,
-                'avs_address_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
-                'auth_code': resp.get('authCode'),
-                'status': resp.get('transactionStatus'),
-                }
+            'price': price,
+            'transaction_id': resp['transId'],
+            'avs_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_SUCCESSFUL_RESPONSES,
+            'cvv_successful': get_first_of(resp, ['cvvResultCode', 'cardCodeResponse']) in CVV_SUCCESSFUL_RESPONSES,
+            'avs_zip_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ZIP_SUCCESSFUL_RESPONSES,
+            'avs_address_successful': get_first_of(resp, ['avsResultCode', 'AVSResponse']) in AVS_ADDRESS_SUCCESSFUL_RESPONSES,
+            'auth_code': resp.get('authCode'),
+            'status': resp.get('transactionStatus'),
+        }
 
         try:
             ret['account_number'] = resp['accountNumber']
@@ -464,14 +486,14 @@ class Gateway(BaseGateway):
     def _resp_to_transaction_dict_direct_response(self, direct_resp, price):
         resp_list = direct_resp.split(',')
         ret = {
-                'price': price,
-                'response_code': resp_list[self.RESPONSE_CODE],
-                'auth_code': resp_list[self.AUTH_CODE],
-                'transaction_id': resp_list[self.TRANSACTION_ID],
-                'account_number': resp_list[self.ACCOUNT_NUMBER],
-                'card_type': resp_list[self.ACCOUNT_TYPE],
-                'last_4': resp_list[self.ACCOUNT_NUMBER][-4:],
-                }
+            'price': price,
+            'response_code': resp_list[self.RESPONSE_CODE],
+            'auth_code': resp_list[self.AUTH_CODE],
+            'transaction_id': resp_list[self.TRANSACTION_ID],
+            'account_number': resp_list[self.ACCOUNT_NUMBER],
+            'card_type': resp_list[self.ACCOUNT_TYPE],
+            'last_4': resp_list[self.ACCOUNT_NUMBER][-4:],
+        }
         return ret
 
     def charge(self, price, options):
@@ -481,19 +503,15 @@ class Gateway(BaseGateway):
             return self.charge_card(options['cc'], price, options)
 
         xml = self._transaction_xml(price, options)
-
-        resp = xml_to_dict(xml_post(self.url, xml))
-        self.check_for_error(resp)
+        resp = self.do_request(xml)
 
         return self._resp_to_transaction_dict(resp['transactionResponse'], price)
 
     def retrieve(self, transaction_id):
         xml = self.build_xml('getTransactionDetailsRequest', OrderedDict([
             ('transId', transaction_id),
-            ]))
-
-        resp = xml_to_dict(xml_post(self.url, xml))
-        self.check_for_error(resp)
+        ]))
+        resp = self.do_request(xml)
 
         return self._resp_to_transaction_dict(resp['transaction'], resp['transaction']['authAmount'])
 
@@ -507,9 +525,7 @@ class Gateway(BaseGateway):
                 ('refTransId', transaction_id),
             ])),
         ]))
-
-        resp = xml_to_dict(xml_post(self.url, xml))
-        self.check_for_error(resp)
+        self.do_request(xml)
 
         return True
 
@@ -524,34 +540,18 @@ class Gateway(BaseGateway):
                     'month': 'XX'
                 })),
                 ('refTransId', transaction.transaction_id),
-                ])),
-            ]))
-
-        resp = xml_to_dict(xml_post(self.url, xml))
-        self.check_for_error(resp)
+            ])),
+        ]))
+        self.do_request(xml)
 
         return True
 
     def create_customer(self, options):
         if 'email' not in options:
-            raise InvalidCustomerException('"email" is a required field in Customer.create')
+            raise exceptions.InvalidCustomerException('"email" is a required field in Customer.create')
 
         xml = self._create_customer_xml(options)
-        resp = xml_to_dict(xml_post(self.url, xml))
-        try:
-            self.check_for_error(resp)
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00039':  # Duplicate Record
-                e.customer_id = None
-
-                customer_match = re.search(r'^A duplicate record with ID (.*) already exists.$', e.message[0][1])
-                if customer_match:
-                    e.customer_id = customer_match.group(1)
-                raise DuplicateCustomerError(e, customer_id=e.customer_id)
-            elif error_code == 'E00013':  # Expiration Date is invalid
-                raise InvalidCardError(e)
-            raise
+        resp = self.do_request(xml)
 
         # make a copy of options
         profile = {}
@@ -584,7 +584,7 @@ class Gateway(BaseGateway):
             'country',
             'phone',
             'fax',
-            ]
+        ]
         if any(field in options for field in billto_fields):
             billto = ('billTo', self._billto_xml(options))
         else:
@@ -611,7 +611,7 @@ class Gateway(BaseGateway):
                     merge = self._dict_to_payment_profile(profile['paymentProfile'])
                     merge.update(options)
                     options = merge
-                except CustomerNotFoundError:
+                except exceptions.CustomerNotFoundError:
                     pass
 
             stuff = []
@@ -634,26 +634,16 @@ class Gateway(BaseGateway):
                 root = OrderedDict([
                     ('customerProfileId', customer_id),
                     ('paymentProfile', OrderedDict(stuff)),
-                    ])
+                ])
                 xml = self.build_xml('updateCustomerPaymentProfileRequest', root)
-                resp = xml_to_dict(xml_post(self.url, xml))
             else:
                 root = OrderedDict([
                     ('customerProfileId', customer_id),
                     ('paymentProfile', OrderedDict(stuff)),
-                    ])
+                ])
                 xml = self.build_xml('createCustomerPaymentProfileRequest', root)
-                resp = xml_to_dict(xml_post(self.url, xml))
 
-            try:
-                self.check_for_error(resp)
-            except GatewayException as e:
-                error_code = e.args[0][0][0]
-                if error_code == 'E00039':  # Duplicate Record
-                    raise DuplicateCustomerError(e)
-                elif error_code == 'E00013':  # Expiration Date is invalid
-                    raise InvalidCardError(e)
-                raise
+            self.do_request(xml)
 
     def add_card_to_customer(self, customer, options):
         root = OrderedDict([
@@ -661,20 +651,12 @@ class Gateway(BaseGateway):
             ('paymentProfile', OrderedDict([
                 ('billTo', self._billto_xml(options)),
                 ('payment', self._payment_xml(options)),
-                ])),
+            ])),
             ('validationMode', 'liveMode'),
-            ])
+        ])
         xml = self.build_xml('createCustomerPaymentProfileRequest', root)
-        resp = xml_to_dict(xml_post(self.url, xml))
-        try:
-            self.check_for_error(resp)
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00039':  # Duplicate Record
-                raise DuplicateCardError(e)
-            elif error_code == 'E00013':  # Expiration Date is invalid
-                raise InvalidCardError(e)
-            raise
+        resp = self.do_request(xml)
+
         card = self._dict_to_payment_profile(root['paymentProfile'])
         card.update({
             'customer_id': customer.customer_id,
@@ -683,48 +665,24 @@ class Gateway(BaseGateway):
         return card
 
     def update_customer(self, customer_id, options):
-        try:
-            xml = self._update_customer_xml(customer_id, options)
-            resp = xml_to_dict(xml_post(self.url, xml))
-            self.check_for_error(resp)
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
-        else:
-            self._update_customer_payment(customer_id, options)
+        xml = self._update_customer_xml(customer_id, options)
+        self.do_request(xml)
+        self._update_customer_payment(customer_id, options)
 
         return True
 
     def retrieve_customer(self, customer_id):
         xml = self.build_xml('getCustomerProfileRequest', OrderedDict([
             ('customerProfileId', customer_id),
-            ]))
-
-        resp = xml_to_dict(xml_post(self.url, xml))
-        try:
-            self.check_for_error(resp)
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
-
+        ]))
+        resp = self.do_request(xml)
         return self._dict_to_customer(resp['profile'])
 
     def delete_customer(self, customer_id):
         xml = self.build_xml('deleteCustomerProfileRequest', OrderedDict([
             ('customerProfileId', customer_id),
-            ]))
-        resp = xml_to_dict(xml_post(self.url, xml))
-        try:
-            self.check_for_error(resp)
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
+        ]))
+        self.do_request(xml)
 
         return True
 
@@ -741,15 +699,7 @@ class Gateway(BaseGateway):
 
     def _charge_customer(self, customer_id, card_id, price, options):
         xml = self._charge_customer_xml(customer_id, card_id, price, options)
-        resp = xml_to_dict(xml_post(self.url, xml))
-        try:
-            self.check_for_error(resp)
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
-
+        resp = self.do_request(xml)
         return self._resp_to_transaction_dict_direct_response(resp['directResponse'], price)
 
     def update_card(self, card):
@@ -762,12 +712,7 @@ class Gateway(BaseGateway):
             ])),
             ('validationMode', 'liveMode'),
         ]))
-        resp = xml_to_dict(xml_post(self.url, xml))
-        try:
-            self.check_for_error(resp)
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            raise
+        self.do_request(xml)
 
     def charge_card(self, card, price, options):
         return self._charge_customer(card.customer_id, card.card_id, price, options)
@@ -776,23 +721,14 @@ class Gateway(BaseGateway):
         xml = self.build_xml('getCustomerPaymentProfileRequest', OrderedDict([
             ('customerProfileId', customer_id),
             ('customerPaymentProfileId', card_id),
-            ]))
-        resp = xml_to_dict(xml_post(self.url, xml))
-        try:
-            self.check_for_error(resp)
-        except GatewayException as e:
-            error_code = e.args[0][0][0]
-            if error_code == 'E00040':  # NotFound
-                raise CustomerNotFoundError(e)
-            raise
-
-        return resp
+        ]))
+        return self.do_request(xml)
 
     def _dict_to_customer(self, resp):
         ret = {
-                'customer_id': resp['customerProfileId'],
-                'email': resp['email'],
-            }
+            'customer_id': resp['customerProfileId'],
+            'email': resp['email'],
+        }
 
         # more than one paymentProfile?
         if isinstance(resp.get('paymentProfiles'), list):
@@ -827,7 +763,7 @@ class Gateway(BaseGateway):
             'number': 'paymentProfile.payment.creditCard.cardNumber',
             'expiration_date': 'paymentProfile.payment.creditCard.expirationDate',
             'card_id': 'paymentProfile.customerPaymentProfileId',
-            }
+        }
         for key, kvp in gets.iteritems():
             v = dotted_get(resp, kvp)
             if v:
@@ -922,10 +858,10 @@ class Gateway(BaseGateway):
                 ('transactionType', 'priorAuthCaptureTransaction'),
                 ('amount', amount),
                 ('refTransId', transaction.transaction_id),
-                ])),
-            ]))
+            ])),
+        ]))
 
-        resp = xml_to_dict(xml_post(self.url, xml))
+        resp = self.do_request(xml)
         transaction.auth_code = resp['transactionResponse']['authCode']
         return transaction
 
@@ -933,7 +869,10 @@ class Gateway(BaseGateway):
         xml = self.build_xml('deleteCustomerPaymentProfileRequest', OrderedDict([
             ('customerProfileId', card.customer_id),
             ('customerPaymentProfileId', card.card_id),
-            ]))
+        ]))
+        self.do_request(xml)
 
+    def do_request(self, xml):
         resp = xml_to_dict(xml_post(self.url, xml))
         self.check_for_error(resp)
+        return resp

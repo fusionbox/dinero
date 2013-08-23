@@ -8,6 +8,9 @@ class GatewayException(DineroException):
     if you do not have the correct login credentials, or if your request has
     malformed data.
     """
+
+
+class AuthenticationError(GatewayException):
     pass
 
 
@@ -95,10 +98,7 @@ class InvalidCustomerException(CustomerError):
 
 class DuplicateCustomerError(CustomerError):
     def __init__(self, *args, **kwargs):
-        if 'customer_id' in kwargs:
-            self.customer_id = kwargs.pop('customer_id')
-        else:
-            self.customer_id = None
+        self.customer_id = kwargs.pop('customer_id', None)
         super(DuplicateCustomerError, self).__init__(*args, **kwargs)
 
 

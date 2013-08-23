@@ -2,9 +2,10 @@ from lxml import etree
 
 import dinero
 
+gateway = dinero.get_gateway('authorize.net')
+
 
 def prepare(s):
-    gateway = dinero.get_gateway('authorize.net')
     template = ''.join(line.strip() for line in s.strip().splitlines())
     return template.format(
         login_id=gateway.login_id,
@@ -26,7 +27,6 @@ MINIMAL_CUSTOMER_XML = prepare("""
 
 
 def test_minimum_create_customer_xml():
-    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
     }
@@ -57,7 +57,6 @@ PAYMENT_CUSTOMER_XML = prepare("""
 
 
 def test_payment_create_customer_xml():
-    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
 
@@ -98,7 +97,6 @@ BILLTO_XML = prepare("""
 
 
 def test_billto_create_customer_xml():
-    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
 
@@ -152,7 +150,6 @@ FULL_DATA_XML = prepare("""
 
 
 def test_customer_create_xml():
-    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
 
@@ -191,7 +188,6 @@ UPDATE_XML = prepare("""
 
 
 def test_update_customer_xml():
-    gateway = dinero.get_gateway('authorize.net')
     options = {
         'email': 'someone@fusionbox.com',
     }
@@ -219,7 +215,6 @@ CHARGE_CUSTOMER_XML = prepare("""
 
 
 def test_charge_customer_xml():
-    gateway = dinero.get_gateway('authorize.net')
     price = 123.45
     customer_id = '123456789'
     card_id = '987654321'
