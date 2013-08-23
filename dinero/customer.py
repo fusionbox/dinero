@@ -9,28 +9,14 @@ class Customer(DineroObject):
     """
     A Customer object stores information about your customers.
     """
+    required_attributes = ['customer_id']
 
-    def __init__(self, gateway_name, customer_id, **kwargs):
-        self.gateway_name = gateway_name
-        self.customer_id = customer_id
-        self.data = kwargs
+    def __init__(self, gateway_name, **kwargs):
+        super(Customer, self).__init__(gateway_name, **kwargs)
         self.data['cards'] = []
-
-    def __setattr__(self, attr, val):
-        if attr in ['gateway_name', 'customer_id', 'data']:
-            self.__dict__[attr] = val
-        else:
-            self.data[attr] = val
 
     def __repr__(self):
         return "Customer({gateway_name!r}, {customer_id!r}, **{data!r})".format(**self.to_dict())
-
-    @classmethod
-    def from_dict(cls, dict):
-        return cls(dict['gateway_name'],
-                   dict['customer_id'],
-                   **dict['data']
-                   )
 
     def update(self, options):
         for key, value in options.iteritems():
@@ -71,8 +57,7 @@ class Customer(DineroObject):
         """
         if not self.customer_id:
             raise InvalidCustomerException("Cannot save a customer that doesn't have a customer_id")
-        gateway = get_gateway(self.gateway_name)
-        gateway.update_customer(self.customer_id, self.data)
+        self.gateway.update_customer(self.customer_id, self.data)
         return True
 
     @log
@@ -82,8 +67,7 @@ class Customer(DineroObject):
         """
         if not self.customer_id:
             raise InvalidCustomerException("Cannot delete a customer that doesn't have a customer_id")
-        gateway = get_gateway(self.gateway_name)
-        gateway.delete_customer(self.customer_id)
+        self.gateway.delete_customer(self.customer_id)
         self.customer_id = None
         return True
 
@@ -94,8 +78,7 @@ class Customer(DineroObject):
         """
         if not self.customer_id:
             raise InvalidCustomerException("Cannot add a card to a customer that doesn't have a customer_id")
-        gateway = get_gateway(gateway_name)
-        resp = gateway.add_card_to_customer(self, options)
+        resp = self.gateway.add_card_to_customer(self, options)
         card = CreditCard(gateway_name=self.gateway_name, **resp)
         self.cards.append(card)
         return card

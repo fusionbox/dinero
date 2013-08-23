@@ -9,18 +9,7 @@ class Transaction(DineroObject):
     interface for creating and dealing with payments.  It interacts with the
     Gateway backend.
     """
-
-    def __init__(self, gateway_name, price, transaction_id, **kwargs):
-        self.gateway_name = gateway_name
-        self.price = price
-        self.transaction_id = transaction_id
-        self.data = kwargs
-
-    def __setattr__(self, attr, val):
-        if attr in ['gateway_name', 'transaction_id', 'price', 'data']:
-            self.__dict__[attr] = val
-        else:
-            self.data[attr] = val
+    required_attributes = ['transaction_id', 'price']
 
     def __repr__(self):
         return "Transaction({gateway_name!r}, {price!r}, {transaction_id!r}, **{data!r})".format(**self.to_dict())
@@ -29,14 +18,6 @@ class Transaction(DineroObject):
         if not isinstance(other, Transaction):
             return False
         return self.transaction_id == other.transaction_id
-
-    @classmethod
-    def from_dict(cls, dict):
-        return cls(dict['gateway_name'],
-                   dict['price'],
-                   dict['transaction_id'],
-                   **dict['data']
-                   )
 
     @classmethod
     @log
@@ -65,14 +46,12 @@ class Transaction(DineroObject):
         Refund will either void a transaction or refund it depending on whether
         or not it has been settled.
         """
-        gateway = get_gateway(self.gateway_name)
-
         # TODO: can this implementation live in dinero.gateways.authorizenet.Gateway?
         try:
-            return gateway.refund(self, amount or self.price)
+            return self.gateway.refund(self, amount or self.price)
         except exceptions.PaymentException:
             if amount is None or amount == self.price:
-                return gateway.void(self)
+                return self.gateway.void(self)
             else:
                 raise exceptions.PaymentException(
                     "You cannot refund a transaction that hasn't been settled"
@@ -86,5 +65,4 @@ class Transaction(DineroObject):
         this method.  It is possible to settle only part of a transaction.  If
         amount is None, the full transaction price is settled.
         """
-        gateway = get_gateway(self.gateway_name)
-        return gateway.settle(self, amount or self.price)
+        return self.gateway.settle(self, amount or self.price)
