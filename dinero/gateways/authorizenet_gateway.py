@@ -159,6 +159,7 @@ def get_first_of(dict, possibilities, default=None):
 
 
 RESPONSE_CODE_EXCEPTION_MAP = {
+        '7':  [ExpiryError],
         '8':  [ExpiryError],
         '6':  [InvalidCardError],
         '37': [InvalidCardError],
