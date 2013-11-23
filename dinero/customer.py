@@ -87,7 +87,7 @@ class Customer(DineroObject):
         return True
 
     @log
-    def add_card(self, options, gateway_name=None):
+    def add_card(self, gateway_name=None, **options):
         """
         The first credit card is added when you call :meth:`create`, but you
         can add more cards using this method. ::
