@@ -39,6 +39,7 @@ def test_successful_retrieve_with_customer():
     assert transaction_retrieved.email == 'joeyjoejoejunior@example.com', 'Transaction.email is not "joeyjoejoejunior@example.com", it is %s' % repr(transaction_retrieved.email)
 
 
+# The following 3 tests need to Decline E and A AVS failures.
 def test_avs():
     # AVS data provided is invalid or AVS is not allowed for the card type that was used.
     with assertRaisesError(AVSError):

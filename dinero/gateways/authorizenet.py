@@ -1,5 +1,8 @@
 from __future__ import division
 import re
+import logging
+from datetime import date
+
 import requests
 from lxml import etree
 
@@ -7,7 +10,7 @@ from dinero.ordereddict import OrderedDict
 from dinero import exceptions
 from dinero.gateways.base import BaseGateway
 
-from datetime import date
+logger = logging.getLogger(__name__)
 
 # resonseCodes
 # 1 = Approved
@@ -58,9 +61,10 @@ AVS_ADDRESS_SUCCESSFUL_RESPONSES = [
 
 
 def xml_post(url, obj):
+    request = etree.tostring(obj)
     resp = requests.post(
         url,
-        data=etree.tostring(obj),
+        data=request,
         headers={'content-type': 'application/xml'},
         verify=True,
     )

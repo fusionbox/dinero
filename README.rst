@@ -26,3 +26,11 @@ or you can run them directly with::
     $ py.test
 
 The tests require ``py.test`` and ``django-dotenv``.
+
+.. note::
+
+    For the Authorize.Net tests to pass, you need a dev account that has the
+
+    -  Transaction Details API enabled
+    -  Decline E and N Address Verification failures
+    -  Decline all CCV failures

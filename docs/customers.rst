@@ -78,14 +78,14 @@ When you create your Customer, it will create the first card::
 
 If you have a secondary card, you can add it using :meth:`Customer.add_card`. ::
 
-    customer.add_card(
-        first_name='John',
-        last_name='Smith',
-        number='4222222222222',
-        cvv='900',
-        address='123 Elm St',
-        zip='12345',
-    )
+    customer.add_card({
+        'first_name': 'John',
+        'last_name': 'Smith',
+        'number': '4222222222222',
+        'cvv': '900',
+        'address': '123 Elm St',
+        'zip': '12345',
+    })
 
 The :class:`CreditCard` class is editable like :class:`Customer`::
 

@@ -67,7 +67,7 @@ API Reference
         ``amount`` is ``None``, the full transaction price is settled.
 
 
-.. class:: dinero.Customer(customer_id, **kwargs)
+.. class:: dinero.Customer
 
     A class for managing customer information.
 
@@ -119,28 +119,28 @@ API Reference
         populated by :meth:`create` and :meth:`retrieve` and appended to by
         :meth:`add_card`.
 
-    .. method:: add_card
+    .. method:: add_card(card_options)
 
         The first credit card is added when you call :meth:`create`, but you
         can add more cards using this method. ::
 
-            customer.add_card(
-                number='4222222222222',
-                cvv='900',
-                month='12'
-                year='2015'
-                address='123 Elm St',
-                zip='12345',
-            )
+            customer.add_card({
+                'number': '4222222222222',
+                'cvv': '900',
+                'month': '12'
+                'year': '2015'
+                'address': '123 Elm St',
+                'zip': '12345',
+            })
 
-.. class:: dinero.CreditCard(customer_id, card_id, **kwargs)
+.. class:: dinero.CreditCard
 
     A class for storing and managing credit card numbers for a customer in the
     gateway.
 
     This class doesn't have a create method because the cards need to be
     associated with a customer.  Use :class:`Customer.add_card` to create a new
-    :class:`.`.
+    :class:`CreditCard`.
 
     .. attribute:: customer_id
 
