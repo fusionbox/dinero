@@ -238,7 +238,7 @@ class AuthorizeNet(Gateway):
 
     def check_for_error(self, resp):
         if resp['messages']['resultCode'] == 'Error':
-            if 'transactionResponse' in resp:
+            if resp.get('transactionResponse'):
                 raise PaymentException(payment_exception_factory([(errors['errorCode'], errors['errorText'])
                                                                   for errors in resp['transactionResponse']['errors']['error']]))
             else:
