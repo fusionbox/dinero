@@ -182,11 +182,28 @@ Like this::
 
 
 
-TESTING
--------
+Contributing
+------------
 
-Write and .env file.
+First you need to write a file in ``test/.env`` that looks like the following::
 
-::
+    AUTHNET_LOGIN_ID=xxxxxxxxxxx
+    AUTHNET_TRANSACTION_KEY=xxxxxxxxxxxxxxxx
+
+Then you can run the tests using::
 
     $ python setup.py test
+
+or you can run them directly with::
+
+    $ py.test
+
+The tests require ``py.test`` and ``django-dotenv``.
+
+.. note::
+
+    For the Authorize.Net tests to pass, you need a dev account that has the
+
+    -  Transaction Details API enabled
+    -  Decline E and N Address Verification failures
+    -  Decline all CCV failures
