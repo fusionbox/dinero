@@ -20,11 +20,12 @@ Documentation
     api
 
 
+Dinero is open source software developed by Fusionbox.  You can find the source
+on `GitHub <https://github.com/fusionbox/dinero>`_ and the tests on
+`Travis CI <https://travis-ci.org/fusionbox/dinero>`_. Patches
+welcome.
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+.. image:: https://travis-ci.org/fusionbox/dinero.png?branch=master
+   :target: http://travis-ci.org/fusionbox/dinero
+   :alt: Build Status

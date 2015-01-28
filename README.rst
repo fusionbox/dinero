@@ -1,6 +1,10 @@
 dinero
 ======
 
+.. image:: https://travis-ci.org/fusionbox/dinero.png?branch=master
+   :target: http://travis-ci.org/fusionbox/dinero
+   :alt: Build Status
+
 Gateway-agnostic payment processing library for Python.
 
 This library aims to be a minimal, pythonic, and highly usable payment
