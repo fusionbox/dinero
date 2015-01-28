@@ -17,6 +17,7 @@ Documentation
     gateways
     transactions
     customers
+    api
 
 
 

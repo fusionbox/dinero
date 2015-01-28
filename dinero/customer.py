@@ -7,7 +7,7 @@ from dinero.base import DineroObject
 
 class Customer(DineroObject):
     """
-    A :class:`Customer` object stores information about your customers.
+    A Customer object stores information about your customers.
     """
 
     @classmethod
@@ -15,7 +15,7 @@ class Customer(DineroObject):
     def create(cls, gateway_name=None, **kwargs):
         """
         Creates and stores a customer object.  When you first create a
-        customer, you are required to also pass in arguments for a credit card. ::
+        customer, you are required to also pass in arguments for a credit card.
 
             Customer.create(
                 email='bill@example.com',
@@ -29,7 +29,7 @@ class Customer(DineroObject):
                 zip='12345',
             )
 
-        This method also accepts ``gateway_name``.
+        This method also accepts `gateway_name`.
         """
         gateway = get_gateway(gateway_name)
         resp = gateway.create_customer(kwargs)
@@ -39,8 +39,7 @@ class Customer(DineroObject):
     @log
     def retrieve(cls, customer_id, gateway_name=None):
         """
-        Fetches a customer object from the gateway.  This optionally accepts a
-        ``gateway_name`` parameter.
+        Fetches a customer object from the gateway.
         """
         gateway = get_gateway(gateway_name)
         resp, cards = gateway.retrieve_customer(customer_id)
@@ -89,8 +88,8 @@ class Customer(DineroObject):
     @log
     def add_card(self, gateway_name=None, **options):
         """
-        The first credit card is added when you call :meth:`create`, but you
-        can add more cards using this method. ::
+        The first credit card is added when you call create, but you can add
+        more cards using this method.
 
             customer.add_card(
                 number='4222222222222',

@@ -5,8 +5,9 @@ from dinero.base import DineroObject
 
 class Transaction(DineroObject):
     """
-    :class:`Transaction` is an abstraction over payments in a gateway.  This is
-    the interface for creating payments.
+    Transaction is an abstraction over payments in a gateway.  This is the
+    interface for creating and dealing with payments.  It interacts with the
+    Gateway backend.
     """
 
     @classmethod
@@ -14,9 +15,9 @@ class Transaction(DineroObject):
     def create(cls, price, gateway_name=None, **kwargs):
         """
         Creates a payment.  This method will actually charge your customer.
-        :meth:`create` can be called in several different ways.
+        This method can be called in several different ways.
 
-        You can call this with the credit card information directly. ::
+        You can call this with the credit card information directly.
 
             Transaction.create(
                 price=200,
@@ -35,8 +36,8 @@ class Transaction(DineroObject):
                 email='johnsmith@example.com',
             )
 
-        If you have a :class:`dinero.Customer` object, you can create a
-        transaction against the customer. ::
+        If you have a Customer object, you can create a transaction against the
+        customer.
 
             customer = Customer.create(
                 ...
@@ -47,8 +48,8 @@ class Transaction(DineroObject):
                 customer=customer,
             )
 
-        Other payment options include ``card`` and ``check``.  See
-        :class:`dinero.CreditCard` for more information.
+        Other payment options include card and check.  See CreditCard for more
+        information.
         """
         gateway = get_gateway(gateway_name)
         resp = gateway.charge(price, kwargs)
@@ -73,7 +74,7 @@ class Transaction(DineroObject):
     @log
     def refund(self, amount=None):
         """
-        If ``amount`` is None dinero will refund the full price of the
+        If `amount` is None dinero will refund the full price of the
         transaction.
 
         Payment gateways often allow you to refund only a certain amount of
@@ -101,7 +102,7 @@ class Transaction(DineroObject):
         """
         If you create a transaction without settling it, you can settle it with
         this method.  It is possible to settle only part of a transaction.  If
-        ``amount`` is None, the full transaction price is settled.
+        `amount` is None, the full transaction price is settled.
         """
         gateway = get_gateway(self.gateway_name)
         return gateway.settle(self, amount or self.price)

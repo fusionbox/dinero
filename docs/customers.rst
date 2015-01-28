@@ -8,7 +8,7 @@ you store credit cards securely so that you can remember cards without actually
 storing the sensitive information on your server.  If your database is
 compromised you won't leak all of your customers' information.
 
-We have two objects that you can use to manage your customers' data.
+We have two classes that you can use to manage your customers' data.
 
 Customers
 =========
@@ -28,7 +28,8 @@ The :class:`Customer` class provides an interface quite similar to
     >>> customer.card_id
     '0000101010'
 
-.. todo::
+.. note::
+
     Are the credit card fields required when creating a Customer?  Dinero
     doesn't really require it, but Authorize.Net seems to require you put
     either a credit card or a bank account (see page 14 of Authorize.Net's `CIM
@@ -105,43 +106,3 @@ The :class:`CreditCard` class is editable like :class:`Customer`::
     credit cards that validate.  Here is a list of `test credit card numbers`_.
 
 .. _test credit card numbers: http://www.paypalobjects.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm
-
-API
-===
-
-.. todo::
-    Provide a list of fields that an instance will always have for Customer and
-    CreditCard.
-
-    Customer
-        - customer_id
-        - first_name
-        - last_name
-        - email
-        - cards
-
-    Card
-        - customer_id
-        - card_id
-        - last_4
-
-
-.. autoclass:: Customer(customer_id, **kwargs)
-
-    .. automethod:: create(email, **kwargs)
-    .. automethod:: retrieve(customer_id[, gateway_name=None])
-    .. automethod:: save()
-    .. automethod:: delete()
-
-    .. attribute:: cards
-
-        Contains a list of all the cards associated with a customer.  This is
-        populated by :meth:`create` and :meth:`retrieve` and appended to by
-        :meth:`add_card`.
-
-    .. automethod:: add_card
-
-.. autoclass:: CreditCard(customer_id, card_id, **kwargs)
-
-    .. automethod:: save()
-    .. automethod:: delete()
