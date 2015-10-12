@@ -1,6 +1,7 @@
 import functools
 import logging
 import re
+import six
 import time
 
 logger = logging.getLogger('dinero')
@@ -23,7 +24,7 @@ def args_kwargs_to_call(args, kwargs):
         if ret:
             ret.append(", ")
         ret.append(repr(arg))
-    for k, v in kwargs.iteritems():
+    for k, v in six.iteritems(kwargs):
         if ret:
             ret.append(", ")
         ret.append("%s=%r" % (k, v))

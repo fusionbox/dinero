@@ -2,7 +2,7 @@ from lxml import etree
 import unittest
 from pprint import pprint
 
-from dinero.ordereddict import OrderedDict
+from collections import OrderedDict
 
 import dinero
 
@@ -142,11 +142,10 @@ class TestXmlToDict(unittest.TestCase):
 class TestDictToXml(unittest.TestCase):
     def _test(self, should, dict, root):
         import textwrap
-        xml = etree.XML(textwrap.dedent(should))
+        xml = etree.fromstring(textwrap.dedent(should))
         actual = dinero.gateways.authorizenet_gateway._dict_to_xml(root, dict)
 
-        assert etree.tostring(actual, pretty_print=True) == \
-                etree.tostring(xml, pretty_print=True)
+        assert etree.dump(actual) == etree.dump(xml)
 
     def test_barebones(self):
         self._test(*(barebones + ('root',)))

@@ -1,9 +1,11 @@
 from __future__ import division
+import codecs
 import re
 import requests
 from lxml import etree
+import six
 
-from dinero.ordereddict import OrderedDict
+from collections import OrderedDict
 from dinero.exceptions import *
 from dinero.gateways.base import Gateway
 
@@ -66,10 +68,10 @@ def xml_post(url, obj):
             )
 
     content = resp.content
-    if isinstance(content, unicode) and content[0] == u'\ufeff':
+    if content.startswith(codecs.BOM_UTF8):
         # authorize.net puts a BOM in utf-8. Shame.
-        content = content[1:]
-    content = str(content)
+        content = content[3:]
+    content = six.binary_type(content)
     return etree.XML(content)
 
 
@@ -83,21 +85,21 @@ def handle_value(root, key, value):
 
         if isinstance(value, dict):
             _dict_to_xml(sub, value)
-        elif isinstance(value, unicode):
+        elif isinstance(value, six.text_type):
             sub.text = value
         elif value:
             sub.text = str(value)
 
 
 def _dict_to_xml(root, dictionary, ns=None):
-    if isinstance(root, basestring):
+    if isinstance(root, six.string_types):
         if ns is None:
             nsmap = None
         else:
             nsmap = {None: ns}
         root = etree.Element(root, nsmap=nsmap)
 
-    for key, value in dictionary.iteritems():
+    for key, value in six.iteritems(dictionary):
         if isinstance(value, list):
             for item in value:
                 handle_value(root, key, item)
@@ -229,10 +231,11 @@ class AuthorizeNet(Gateway):
         self._url = value
 
     def build_xml(self, root_name, root):
-        root.insert(0, 'merchantAuthentication', OrderedDict([
+        root = OrderedDict(
+            [('merchantAuthentication', OrderedDict([
                 ('name', self.login_id),
                 ('transactionKey', self.transaction_key),
-                ]))
+            ]))] + list(root.items()))
 
         return _dict_to_xml(root_name, root, self.ns)
 
@@ -828,7 +831,7 @@ class AuthorizeNet(Gateway):
             'expiration_date': 'paymentProfile.payment.creditCard.expirationDate',
             'card_id': 'paymentProfile.customerPaymentProfileId',
             }
-        for key, kvp in gets.iteritems():
+        for key, kvp in six.iteritems(gets):
             v = dotted_get(resp, kvp)
             if v:
                 ret[key] = v
@@ -891,7 +894,7 @@ class AuthorizeNet(Gateway):
             'expiration_date': 'payment.creditCard.expirationDate',
         }
 
-        for key, kvp in gets.iteritems():
+        for key, kvp in six.iteritems(gets):
             v = dotted_get(resp, kvp)
             if v:
                 ret[key] = v

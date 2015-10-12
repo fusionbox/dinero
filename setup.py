@@ -18,5 +18,5 @@ setup(
         url="https://github.com/fusionbox/dinero",
         platforms="any",
         license="BSD",
-        install_requires=['lxml', 'requests'],
+        install_requires=['six', 'lxml', 'requests'],
         )
