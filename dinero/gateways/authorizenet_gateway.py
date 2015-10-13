@@ -2,14 +2,19 @@ from __future__ import division
 import codecs
 import re
 import requests
-from lxml import etree
 import six
+import sys
 
-from collections import OrderedDict
+from datetime import date
+from lxml import etree
+
 from dinero.exceptions import *
 from dinero.gateways.base import Gateway
 
-from datetime import date
+if sys.version_info < (2, 7):
+    from dinero.ordereddict import OrderedDict
+else:
+    from collections import OrderedDict
 
 # resonseCodes
 # 1 = Approved

@@ -7,7 +7,9 @@ script:
   tox -e $TOX_ENV
 env:
   matrix:
+    - TOX_ENV=py26
     - TOX_ENV=py27
+    - TOX_ENV=py33
     - TOX_ENV=py34
   global:
     - secure: dqz5GeC34d2WZCpvaeBOSdjv4gRZsqIZYvicdF/xeWft4FHFi3dTCed2jDTdQj3xUsE6nemWYWAgFM/f7ng0sLlE56dNqIwXRcpC7OYXKL/7lGQNuCDRVbDjMictvfVUohovugJx8KdaWj7abnh3AoDY4RpQ03sN2p17H06X6bo=

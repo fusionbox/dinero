@@ -1,10 +1,15 @@
-from lxml import etree
 import unittest
+import sys
+
+from lxml import etree
 from pprint import pprint
 
-from collections import OrderedDict
-
 import dinero
+
+if sys.version_info <= (2, 7):
+    from dinero.ordereddict import OrderedDict
+else:
+    from collections import OrderedDict
 
 
 barebones = ("<root><a>b</a></root>", OrderedDict([('a', 'b')]))
