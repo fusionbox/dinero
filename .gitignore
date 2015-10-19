@@ -5,3 +5,4 @@ build/
 test/authorize_net_configuration.py
 test/braintree_configuration.py
 doc/_build
+.tox

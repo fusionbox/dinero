@@ -366,7 +366,7 @@ class Braintree(Gateway):
 
     def _transaction_to_transaction_dict(self, transaction):
         try:
-            print transaction.customer
+            print(transaction.customer)
         except:
             pass
 

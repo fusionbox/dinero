@@ -1,10 +1,15 @@
-from lxml import etree
 import unittest
+import sys
+
+from lxml import etree
 from pprint import pprint
 
-from dinero.ordereddict import OrderedDict
-
 import dinero
+
+if sys.version_info <= (2, 7):
+    from dinero.ordereddict import OrderedDict
+else:
+    from collections import OrderedDict
 
 
 barebones = ("<root><a>b</a></root>", OrderedDict([('a', 'b')]))
@@ -142,11 +147,10 @@ class TestXmlToDict(unittest.TestCase):
 class TestDictToXml(unittest.TestCase):
     def _test(self, should, dict, root):
         import textwrap
-        xml = etree.XML(textwrap.dedent(should))
+        xml = etree.fromstring(textwrap.dedent(should))
         actual = dinero.gateways.authorizenet_gateway._dict_to_xml(root, dict)
 
-        assert etree.tostring(actual, pretty_print=True) == \
-                etree.tostring(xml, pretty_print=True)
+        assert etree.dump(actual) == etree.dump(xml)
 
     def test_barebones(self):
         self._test(*(barebones + ('root',)))

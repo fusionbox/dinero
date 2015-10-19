@@ -1,3 +1,4 @@
+import six
 
 
 def fancy_import(import_name):
@@ -7,7 +8,7 @@ def fancy_import(import_name):
     dinero.gateways.AuthorizeNet object.
     """
     import_path, import_me = import_name.rsplit('.', 1)
-    imported = __import__(import_path, globals(), locals(), [import_me], -1)
+    imported = __import__(import_path, globals(), locals(), [import_me], 0)
     return getattr(imported, import_me)
 
 
@@ -26,12 +27,12 @@ def configure(options):
 
     `settings.py` is a great place to put this call in a Django project.
     """
-    for name, conf in options.iteritems():
+    for name, conf in six.iteritems(options):
         _configured_gateways[name] = fancy_import(conf['type'])(conf)
         _configured_gateways[name].name = name
         is_default = conf.get('default', False)
         if is_default:
-            for gateway in _configured_gateways.itervalues():
+            for gateway in six.itervalues(_configured_gateways):
                 gateway.default = False
         _configured_gateways[name].default = is_default
 
@@ -53,7 +54,7 @@ def get_default_gateway():
     Why KeyError?  That is the same error that would be thrown if _configured_gateways
     was accessed with a gateway name that doesn't exist.
     """
-    for gateway in _configured_gateways.itervalues():
+    for gateway in six.itervalues(_configured_gateways):
         if gateway.default:
             return gateway
     raise KeyError("Could not find a gateway configuration that is assigned as 'default'")
@@ -63,6 +64,6 @@ def set_default_gateway(name):
     """
     Set a default gateway that has already been configured.
     """
-    for gateway in _configured_gateways.itervalues():
+    for gateway in six.itervalues(_configured_gateways):
         gateway.default = False
     _configured_gateways[name].default = True

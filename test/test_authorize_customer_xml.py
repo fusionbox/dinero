@@ -24,7 +24,7 @@ except ImportError:
 
 
 def trimmy(s):
-    return ''.join(line.lstrip() for line in s.splitlines())
+    return ''.join(line.lstrip() for line in s.splitlines()).encode()
 
 
 def test_minimum_create_customer_xml():

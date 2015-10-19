@@ -2,6 +2,8 @@ import os
 import uuid
 import datetime
 import dinero
+import six
+
 from dinero.exceptions import *
 
 ## These tests require that you provide settings for authorize.net and set up
@@ -49,7 +51,7 @@ def test_create_delete_customer():
         assert customer.card_id, 'customer.card_id is not set'
     except AttributeError:
         assert False, 'customer.card_id is not set'
-    for key, val in options.iteritems():
+    for key, val in six.iteritems(options):
         try:
             assert val == getattr(customer, key), 'customer.%s != options[%s]' % (key, key)
         except AttributeError:

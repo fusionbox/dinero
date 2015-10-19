@@ -31,7 +31,7 @@ def transact(desired_errors, price=None, number='4' + '1' * 15, month='12', year
         transaction = dinero.Transaction.create(price, number=number, month=month, year=year, gateway_name='authorize.net', **kwargs)
     except PaymentException as e:
         if not desired_errors:
-            print repr(e)
+            print(repr(e))
             assert False, e.message
         else:
             for error in desired_errors:
