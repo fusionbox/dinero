@@ -1,5 +1,6 @@
 import os
 import uuid
+import datetime
 import dinero
 from dinero.exceptions import *
 
@@ -47,3 +48,31 @@ def test_create_customer_not_enough_payment_info_error():
         assert False
     except InvalidCardError:
         pass
+
+def test_duplicate_customer_error():
+    options = {
+        'email': '{0}@example.com'.format(uuid.uuid4()),
+
+        'first_name': 'Joey',
+        'last_name': 'Shabadoo',
+        'company': 'Shabadoo, Inc.',
+        'phone': '000-000-0000',
+        'fax': '000-000-0001',
+        'address': '123 somewhere st',
+        'state': 'SW',
+        'city': 'somewhere',
+        'zip': '12345',
+        'country': 'US',
+
+        'number': '4' + '1' * 15,
+        'month': '12',
+        'year': str(datetime.date.today().year + 1),
+    }
+
+    dinero.Customer.create(gateway_name='authorize.net', **options)
+    try:
+        customer = dinero.Customer.create(gateway_name='authorize.net', **options)
+        assert False, "DuplicateCustomerError should be raised"
+    except DuplicateCustomerError:
+        pass
+
