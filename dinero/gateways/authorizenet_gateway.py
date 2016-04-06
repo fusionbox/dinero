@@ -196,7 +196,7 @@ def payment_exception_factory(errors):
 
 class AuthorizeNet(Gateway):
     ns = 'AnetApi/xml/v1/schema/AnetApiSchema.xsd'
-    live_url = 'https://api.authorize.net/xml/v1/request.api'
+    live_url = 'https://api2.authorize.net/xml/v1/request.api'
     test_url = 'https://apitest.authorize.net/xml/v1/request.api'
 
     def __init__(self, options):
